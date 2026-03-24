@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billiard Tracker Landing Page</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --sub: #86868b;
+    --border: #d2d2d7; --primary: #0071e3; --accent: #f5f5f7;
+  }
+  [data-theme="dark"] {
+    --bg: #000000; --card: #1c1c1e; --text: #f5f5f7; --sub: #a1a1a6;
+    --border: #38383a; --primary: #0a84ff; --accent: #2c2c2e;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    margin: 0; padding: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex; flex-direction: column; min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .nav-top { 
+    display: flex; justify-content: flex-end; padding: 20px; 
+    max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box;
+  }
+  .mode-btn { 
+    background: var(--card); border: 1px solid var(--border); color: var(--text); 
+    padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .mode-btn:hover { background: var(--accent); }
+
+  header { text-align: center; padding: 40px 20px; }
+  header h1 { font-weight: 800; font-size: 32px; margin-bottom: 8px; letter-spacing: -0.5px; }
+  header p { color: var(--sub); font-size: 16px; }
+
+  .container {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 24px;
+    flex-grow: 1; align-items: flex-start; padding: 20px;
+  }
+
+  .card {
+    background: var(--card); padding: 40px 30px; border-radius: 24px;
+    border: 1px solid var(--border);
+    width: 320px; text-align: center; cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  
+  .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    border-color: var(--primary);
+  }
+
+  .card .icon-circle {
+    width: 60px; height: 60px; background: var(--accent);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; font-size: 24px; transition: 0.3s;
+  }
+  .card:hover .icon-circle { background: var(--primary); color: white; }
+
+  .card h2 { margin: 0 0 12px 0; font-size: 20px; font-weight: 700; }
+  .card p { color: var(--sub); font-size: 14px; line-height: 1.5; margin-bottom: 25px; min-height: 42px; }
+
+  .go-btn {
+    background: var(--primary); color: white; border: none; border-radius: 12px;
+    padding: 12px 30px; font-weight: 700; cursor: pointer; transition: 0.2s;
+    width: 100%; font-size: 14px;
+  }
+  .go-btn:hover { opacity: 0.9; transform: scale(1.02); }
+
+  footer { text-align: center; padding: 30px; color: var(--sub); font-size: 12px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="nav-top">
+  <button class="mode-btn" onclick="toggleTheme()">🌓 Toggle Mode</button>
+</div>
+
+<header>
+  <h1>Billiard Tracker</h1>
+  <p>Select your dashboard experience</p>
+</header>
+
+<div class="container">
+  <div class="card" onclick="goToResultMatch()">
+    <div class="icon-circle">🏆</div>
+    <h2>Ger Gie Billiard</h2>
+    <p>Dedicated tracking for the legendary duo matches.</p>
+    <button class="go-btn">Open Dashboard</button>
+  </div>
+
+  <div class="card" onclick="goToPerGame()">
+    <div class="icon-circle">🌎</div>
+    <h2>Global Arena</h2>
+    <p>Match record for everyone.</p>
+    <button class="go-btn">Explore Stats</button>
+  </div>
+</div>
+
+<footer>
+  &copy; 2026 GERGIE BILLIARD PRO • V8.1
+</footer>
+
+<script>
+const loadTheme = () => {
+  const savedTheme = localStorage.getItem('billiard-theme') || 'light';
+  document.body.setAttribute('data-theme', savedTheme);
+};
+
+window.toggleTheme = () => {
+  const current = document.body.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', next);
+  localStorage.setItem('billiard-theme', next);
+};
+
+loadTheme();
+
+function goToResultMatch(){ window.location.href = "main.html"; }
+function goToPerGame(){ window.location.href = "review.html"; }
+</script>
+
+</body>
+</html>
