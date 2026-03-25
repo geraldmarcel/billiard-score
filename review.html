@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V8.3</title>
+<title>Billiard Pro Tracker V8.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -23,17 +23,14 @@
   .back-btn { text-decoration: none; color: var(--sub); font-size: 13px; font-weight: 600; }
   .mode-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
 
-  /* Input Card - New Layout */
   .input-card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); }
-  
-  .row-single { margin-bottom: 15px; } /* Untuk Date baris sendiri */
-  .row-double { display: flex; gap: 10px; margin-bottom: 20px; } /* Location & Table sejajar */
+  .row-single { margin-bottom: 15px; }
+  .row-double { display: flex; gap: 10px; margin-bottom: 20px; }
   
   .input-group { display: flex; flex-direction: column; flex: 1; position: relative; }
   label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; letter-spacing: 0.5px; }
   input, select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 10px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box; }
 
-  /* Player Row - Skor Box 50px */
   .player-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
   .p-name-wrap { flex: 1; position: relative; }
   .p-score-wrap { width: 50px; } 
@@ -42,7 +39,6 @@
   .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 8px; border-radius: 10px; width: 100%; cursor: pointer; font-size: 12px; margin-bottom: 15px; }
   .save-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; }
 
-  /* Stats & Table */
   .section-title { font-size: 16px; font-weight: 700; margin: 25px 0 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
   .stat-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; }
   .card-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--accent); }
@@ -62,7 +58,6 @@
   .tag { padding: 3px 7px; border-radius: 5px; color: #fff; font-size: 9px; font-weight: 800; margin: 1px; display: inline-block; }
   .blue { background: var(--win); } .red { background: var(--lose); } .yellow { background: var(--mid); color: #000; }
 
-  /* Autocomplete */
   .ac-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; z-index: 999; display: none; max-height: 150px; overflow-y: auto; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-top: 4px; }
   .ac-item { padding: 10px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
   .ac-item:hover { background: var(--primary); color: white; }
@@ -116,6 +111,20 @@
       <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
     </select>
     <select id="filterYear" onchange="render()"><option value="all">All Years</option></select>
+  </div>
+
+  <div class="section-title" onclick="toggleMainSection('leaderboardSection')">🏆 H2H Points Leaderboard <span>▼</span></div>
+  <div id="leaderboardSection" style="margin-bottom: 20px;">
+    <div style="margin-bottom: 10px; padding: 0 5px;">
+      <label style="font-size: 9px; font-weight: 800; color: var(--sub);">Filter Matchup by Player:</label>
+      <select id="filterPlayer" onchange="render()" style="margin-top:5px;"></select>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Matchup</th><th>Total Accumulated Score</th></tr></thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="section-title" onclick="toggleMainSection('tableStats')">📊 Table Stats <span>▼</span></div>
@@ -200,7 +209,7 @@ window.addPlayerField = (name = "", score = "") => {
             <div class="ac-box"></div>
         </div>
         <div class="p-score-wrap">
-            <input type="number" class="p-score" placeholder="0" value="${score}" oninput="if(this.value.length>2) this.value=this.value.slice(0,2)">
+            <input type="number" class="p-score" placeholder="0" value="${score}">
         </div>
     `;
     container.appendChild(div);
@@ -224,6 +233,11 @@ onValue(ref(db, DB_PATH), snap => {
   const curY = fY.value; fY.innerHTML = '<option value="all">All Years</option>';
   [...ySet].sort().reverse().forEach(y => fY.innerHTML += `<option value="${y}">${y}</option>`);
   if(curY) fY.value = curY;
+
+  const fP = document.getElementById('filterPlayer');
+  const curP = fP.value; fP.innerHTML = '<option value="all">All Players</option>';
+  masterP.forEach(p => fP.innerHTML += `<option value="${p}">${p}</option>`);
+  if(curP) fP.value = curP;
 
   setupAC(document.getElementById('loc'), document.getElementById('res-loc'), masterL);
   setupAC(document.getElementById('table'), document.getElementById('res-table'), masterT);
@@ -249,17 +263,19 @@ window.saveMatch = () => {
 
 window.render = () => {
   const tbody = document.getElementById('historyBody');
-  tbody.innerHTML = "";
-  let tStats = {}, lStats = {};
-  const selM = document.getElementById('filterMonth').value, selY = document.getElementById('filterYear').value;
+  const lbBody = document.getElementById('leaderboardBody');
+  tbody.innerHTML = ""; lbBody.innerHTML = "";
+  let tStats = {}, lStats = {}, h2h = {};
+  const selM = document.getElementById('filterMonth').value, selY = document.getElementById('filterYear').value, selP = document.getElementById('filterPlayer').value;
 
   Object.keys(allData).sort().reverse().forEach(d => {
     const [y, m_str] = d.split('-');
     Object.keys(allData[d]).sort((a,b) => allData[d][b].timestamp - allData[d][a].timestamp).forEach(mid => {
       const m = allData[d][mid];
-      const scores = m.players.map(p => p.score);
-      const high = Math.max(...scores), low = Math.min(...scores);
       if ((selM === 'all' || m_str === selM) && (selY === 'all' || y === selY)) {
+          const scores = m.players.map(p => p.score);
+          const high = Math.max(...scores), low = Math.min(...scores);
+          
           const tr = document.createElement('tr');
           let board = m.players.map(p => {
             let c = (p.score === high && high !== low) ? 'blue' : (p.score === low && high !== low ? 'red' : 'yellow');
@@ -269,18 +285,40 @@ window.render = () => {
             <td><button class="action-btn edit" onclick="editMatch('${d}','${mid}')">✎</button>
                 <button class="action-btn delete" onclick="delMatch('${d}','${mid}')">✕</button></td>`;
           tbody.appendChild(tr);
-          m.players.forEach(p => {
-            const win = (p.score === high && high > 0);
+
+          m.players.forEach((p1, idx) => {
+            const win = (p1.score === high && high > 0);
             [[m.table, tStats], [m.location, lStats]].forEach(([key, obj]) => {
                if(key === "-") return;
                if(!obj[key]) obj[key] = {};
-               if(!obj[key][p.name]) obj[key][p.name] = {w:0, t:0};
-               obj[key][p.name].t++; if(win) obj[key][p.name].w++;
+               if(!obj[key][p1.name]) obj[key][p1.name] = {w:0, t:0};
+               obj[key][p1.name].t++; if(win) obj[key][p1.name].w++;
             });
+
+            for (let j = idx + 1; j < m.players.length; j++) {
+                const p2 = m.players[j];
+                const pair = [p1.name, p2.name].sort();
+                const key = pair.join(" VS ");
+                if(!h2h[key]) h2h[key] = {};
+                h2h[key][pair[0]] = (h2h[key][pair[0]] || 0) + (p1.name === pair[0] ? p1.score : p2.score);
+                h2h[key][pair[1]] = (h2h[key][pair[1]] || 0) + (p1.name === pair[1] ? p1.score : p2.score);
+            }
           });
       }
     });
   });
+
+  Object.keys(h2h).sort().forEach(key => {
+      const names = key.split(" VS ");
+      if (selP !== 'all' && !names.includes(selP)) return;
+      const s1 = h2h[key][names[0]], s2 = h2h[key][names[1]];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td style="font-size:10px; font-weight:700;">${key}</td>
+        <td><span class="tag ${s1>=s2? (s1==s2?'yellow':'blue'):'red'}">${names[0].split(' ')[0]}:${s1}</span>
+            <span class="tag ${s2>=s1? (s1==s2?'yellow':'blue'):'red'}">${names[1].split(' ')[0]}:${s2}</span></td>`;
+      lbBody.appendChild(tr);
+  });
+
   renderStats('tableStats', tStats); renderStats('locStats', lStats);
 };
 
