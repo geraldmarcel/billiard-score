@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V9.3</title>
+<title>Billiard Pro Tracker V9.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -31,7 +31,6 @@
   label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; letter-spacing: 0.5px; }
   input, select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box; }
   
-  /* Player Row Fix */
   .player-header { display: flex; gap: 10px; margin-bottom: 5px; }
   .player-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
   .p-name-wrap { flex: 1; position: relative; }
@@ -43,13 +42,17 @@
   .ac-item { padding: 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
   .ac-item:hover { background: var(--primary); color: white; }
 
-  /* Dashboard Filters (Non-Collapsible) */
+  /* Buttons */
+  .btn-container { display: flex; gap: 10px; margin-top: 15px; }
+  .save-btn { flex: 3; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; }
+  .reset-btn { flex: 1; padding: 15px; background: var(--accent); color: var(--sub); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 13px; }
+  .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; margin: 10px 0; font-size: 12px; }
+
+  /* Table & Others */
   .multi-select-box { background: var(--accent); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 700; background: var(--card); color: var(--sub); }
   .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
-  .filter-bar { display: flex; gap: 8px; margin-top: 10px; }
-
-  /* Elements */
+  
   .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 320px; }
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; min-width: 450px; }
@@ -59,9 +62,6 @@
   .tag { padding: 4px 8px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; margin: 1px; display: inline-block; }
   .blue { background: var(--win); } .red { background: var(--lose); }
 
-  .save-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 15px; }
-  .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; margin: 10px 0; font-size: 12px; }
-  
   .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
   .edit { background: #e1f0ff; color: var(--primary); margin-right: 4px; }
   .delete { background: #ffebeb; color: #ff3b30; }
@@ -84,7 +84,7 @@
   </div>
 
   <div class="card">
-    <div style="font-weight: 800; font-size: 15px; margin-bottom: 15px;">📝 New Match Record</div>
+    <div style="font-weight: 800; font-size: 15px; margin-bottom: 15px;">📝 Match Record</div>
     <div class="input-group"><label>Match Date</label><input type="date" id="date"></div>
     <div style="display:flex; gap:10px;">
       <div class="input-group"><label>Location</label><input type="text" id="loc" placeholder="Club..." autocomplete="off"><div id="res-loc" class="ac-box"></div></div>
@@ -97,14 +97,17 @@
     </div>
     <div id="playerInputs"></div>
     <button class="add-player-btn" onclick="window.addPlayerField()">+ Add Player</button>
-    <button class="save-btn" id="btnSave" onclick="saveMatch()">Save Match Result</button>
+    
+    <div class="btn-container">
+      <button class="reset-btn" onclick="window.resetForm()">Reset</button>
+      <button class="save-btn" id="btnSave" onclick="saveMatch()">Save Match Result</button>
+    </div>
   </div>
 
   <div class="card">
     <div style="font-weight: 800; font-size: 15px; margin-bottom: 10px;">🔎 Dashboard Analysis Filter</div>
     <label>Players Filter:</label>
     <div id="multiPlayerFilter" class="multi-select-box"></div>
-    
     <label>Time Period Filter:</label>
     <div class="filter-bar">
       <select id="filterMonth" onchange="render()"><option value="all">All Months</option>
@@ -190,6 +193,16 @@ window.addPlayerField = (n="", s="") => {
     };
 };
 
+window.resetForm = () => {
+    editingId = null;
+    document.getElementById('btnSave').innerText = "Save Match Result";
+    document.getElementById('loc').value = "";
+    document.getElementById('table').value = "";
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('playerInputs').innerHTML = "";
+    addPlayerField(); addPlayerField();
+};
+
 onValue(ref(db, DB_PATH), snap => {
     allData = snap.val() || {};
     let pSet = new Set(), lSet = new Set(), tSet = new Set(), ySet = new Set();
@@ -217,7 +230,7 @@ window.saveMatch = () => {
     if(ps.length < 2 || !d) return alert("Complete data!");
     const path = editingId ? `${DB_PATH}/${d}/${editingId}` : `${DB_PATH}/${d}`;
     const act = editingId ? set(ref(db, path), { players:ps, location:l, table:t, timestamp:Date.now() }) : push(ref(db, path), { players:ps, location:l, table:t, timestamp:Date.now() });
-    act.then(() => { editingId=null; document.getElementById('btnSave').innerText="Save Match Result"; document.getElementById('playerInputs').innerHTML=""; addPlayerField(); addPlayerField(); });
+    act.then(() => window.resetForm()).catch(e => alert("Error: " + e.message));
 };
 
 window.render = () => {
