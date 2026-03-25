@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V9.8</title>
+<title>Billiard Pro Tracker V9.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -25,40 +25,36 @@
   .back-btn { text-decoration: none; color: var(--sub); font-size: 13px; font-weight: 600; }
   .mode-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
 
-  /* Input Cards */
   .card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
   .input-group { display: flex; flex-direction: column; position: relative; margin-bottom: 12px; }
   
-  /* Compact Date Style */
+  /* Compact Date */
   .date-wrap { width: 150px; } 
   
   label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; letter-spacing: 0.5px; }
   input, select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box; }
   
-  /* Buttons Layout (Save Left, Reset Right) */
+  /* Buttons: Save Left, Reset Right */
   .btn-container { display: flex; gap: 10px; margin-top: 15px; }
   .save-btn { flex: 3; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; }
   .reset-btn { flex: 1; padding: 15px; background: var(--accent); color: var(--sub); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 13px; }
   
-  /* Player UI */
   .player-header { display: flex; gap: 10px; margin-bottom: 5px; }
   .player-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
   .p-name-wrap { flex: 1; position: relative; }
   .p-score-wrap { width: 70px; }
   .p-score { text-align: center; font-weight: 800; color: var(--primary); }
 
-  /* Autocomplete */
   .ac-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; z-index: 9999; display: none; max-height: 150px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
   .ac-item { padding: 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
   .ac-item:hover { background: var(--primary); color: white; }
 
-  /* Table Styles */
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; min-width: 450px; }
   th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 12px; }
   th { background: var(--accent); color: var(--sub); font-size: 9px; font-weight: 800; text-transform: uppercase; }
   
-  /* Action Buttons in Table */
+  /* Action Buttons (Restored Delete) */
   .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; margin: 2px; }
   .edit { background: #e1f0ff; color: var(--primary); }
   .delete { background: #ffebeb; color: #ff3b30; }
@@ -124,8 +120,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const DB_PATH = 'billiard_final_v8';
 
-let allData = {}, masterP = [], masterL = [], masterT = [], selectedPlayers = [];
-let editingId = null, myChart = null;
+let allData = {}, masterP = [], editingId = null, myChart = null;
 
 const userColors = ["#0071e3", "#34c759", "#ff9500", "#af52de", "#ff3b30", "#5856d6", "#ff2d55", "#00c7be"];
 function getPColor(p) { return userColors[masterP.indexOf(p) % userColors.length]; }
@@ -138,8 +133,7 @@ window.addPlayerField = (n="", s="") => {
 };
 
 window.resetForm = () => {
-    editingId = null;
-    document.getElementById('btnSave').innerText = "Save Match Result";
+    editingId = null; document.getElementById('btnSave').innerText = "Save Match Result";
     document.getElementById('loc').value = ""; document.getElementById('table').value = "";
     document.getElementById('date').value = new Date().toISOString().split('T')[0];
     document.getElementById('playerInputs').innerHTML = "";
@@ -148,6 +142,9 @@ window.resetForm = () => {
 
 onValue(ref(db, DB_PATH), snap => {
     allData = snap.val() || {};
+    let pSet = new Set();
+    Object.values(allData).forEach(day => Object.values(day).forEach(m => m.players.forEach(p => pSet.add(p.name))));
+    masterP = [...pSet].sort();
     render();
 });
 
@@ -163,20 +160,50 @@ window.saveMatch = () => {
 
 window.render = () => {
     const hBody = document.getElementById('historyBody'); hBody.innerHTML = "";
+    const lBody = document.getElementById('leaderboardBody'); lBody.innerHTML = "";
+    let h2h = {}, chartData = {};
+
     Object.keys(allData).sort().reverse().forEach(date => {
         Object.keys(allData[date]).forEach(mid => {
             const m = allData[date][mid], hi = Math.max(...m.players.map(p => p.score));
             const tr = document.createElement('tr');
-            let res = m.players.map(p => `<span class="tag ${p.score==hi?'blue':'red'}">${p.name.split(' ')[0]}</span>`).join("");
+            let res = m.players.map(p => `<span class="tag ${p.score==hi?'blue':'red'}">${p.name.split(' ')[0]}:${p.score}</span>`).join("");
             tr.innerHTML = `<td>${date.slice(5)}</td><td>${res}</td><td>${m.location}</td><td>${m.table}</td>
                 <td>
                   <button class="action-btn edit" onclick="window.editMatch('${date}','${mid}')">✎</button>
                   <button class="action-btn delete" onclick="window.delMatch('${date}','${mid}')">✕</button>
                 </td>`;
             hBody.appendChild(tr);
+
+            m.players.forEach((p1, i) => {
+                chartData[p1.name] = (chartData[p1.name] || 0) + p1.score;
+                for(let j=i+1; j<m.players.length; j++) {
+                    const p2 = m.players[j], key = [p1.name, p2.name].sort().join(" VS ");
+                    if(!h2h[key]) h2h[key] = {};
+                    h2h[key][p1.name] = (h2h[key][p1.name] || 0) + p1.score;
+                    h2h[key][p2.name] = (h2h[key][p2.name] || 0) + p2.score;
+                }
+            });
         });
     });
+
+    Object.keys(h2h).sort().forEach(k => {
+        const n = k.split(" VS "), s1 = h2h[k][n[0]], s2 = h2h[k][n[1]];
+        lBody.innerHTML += `<tr><td style="font-weight:700;">${k}</td><td><span class="tag ${s1>=s2?'blue':'red'}">${n[0]}:${s1}</span> <span class="tag ${s2>=s1?'blue':'red'}">${n[1]}:${s2}</span></td></tr>`;
+    });
+    updateChart(chartData);
 };
+
+function updateChart(data) {
+    const ctx = document.getElementById('leaderboardChart');
+    const labs = Object.keys(data).sort((a,b) => data[b] - data[a]);
+    if(myChart) myChart.destroy();
+    myChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labs, datasets: [{ data: labs.map(l => data[l]), backgroundColor: labs.map(l => getPColor(l)), borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: true, aspectRatio: 2, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+    });
+}
 
 window.editMatch = (d, mid) => {
     const m = allData[d][mid]; editingId = mid;
@@ -187,12 +214,8 @@ window.editMatch = (d, mid) => {
 };
 
 window.delMatch = (d, mid) => { if(confirm("Hapus data ini?")) remove(ref(db, `${DB_PATH}/${d}/${mid}`)); };
-
 window.toggleMainSection = (id) => document.getElementById(id).classList.toggle('collapsed');
-window.toggleTheme = () => {
-    const n = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', n);
-};
+window.toggleTheme = () => document.body.setAttribute('data-theme', document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 
 document.getElementById('date').value = new Date().toISOString().split('T')[0];
 addPlayerField(); addPlayerField();
