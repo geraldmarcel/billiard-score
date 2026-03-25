@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V8.6</title>
+<title>Billiard Pro Tracker V8.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -22,125 +22,97 @@
   .container { max-width: 800px; margin: 0 auto; }
   
   .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .back-btn { text-decoration: none; color: var(--sub); font-size: 13px; font-weight: 600; }
   .mode-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
 
-  .input-card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); }
-  .row-single { margin-bottom: 15px; }
-  .row-double { display: flex; gap: 10px; margin-bottom: 20px; }
-  
-  .input-group { display: flex; flex-direction: column; flex: 1; position: relative; }
+  .input-card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); position: relative; z-index: 10; }
+  .input-group { display: flex; flex-direction: column; flex: 1; position: relative; margin-bottom: 10px; }
   label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; letter-spacing: 0.5px; }
   input, select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 10px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box; }
 
   .player-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
   .p-name-wrap { flex: 1; position: relative; }
-  .p-score-wrap { width: 50px; } 
-  .p-score { text-align: center; font-weight: 800; color: var(--primary); padding: 10px 2px; }
+  .p-score-wrap { width: 55px; } 
+  .p-score { text-align: center; font-weight: 800; color: var(--primary); }
 
-  .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 8px; border-radius: 10px; width: 100%; cursor: pointer; font-size: 12px; margin-bottom: 15px; }
-  .save-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; }
-
-  .section-title { font-size: 16px; font-weight: 700; margin: 25px 0 10px; display: flex; align-items: center; justify-content: space-between; }
-  .stat-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; }
-  .card-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--accent); }
-  .card-content { padding: 12px; }
-  .collapsed { display: none !important; }
-
-  /* Multi-Select Player Filter */
-  .multi-select-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  .chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 600; background: var(--accent); transition: 0.2s; }
-  .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-  .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 300px; position: relative; }
-
-  .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; min-width: 500px; }
-  th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 12px; }
-  th { background: var(--accent); color: var(--sub); text-transform: uppercase; font-size: 9px; font-weight: 800; }
-  
-  .tag { padding: 3px 7px; border-radius: 5px; color: #fff; font-size: 9px; font-weight: 800; margin: 1px; display: inline-block; }
-  .blue { background: var(--win); } .red { background: var(--lose); } .yellow { background: var(--mid); color: #000; }
-
-  .ac-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; z-index: 999; display: none; max-height: 150px; overflow-y: auto; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-top: 4px; }
-  .ac-item { padding: 10px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .ac-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; z-index: 9999; display: none; max-height: 150px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+  .ac-item { padding: 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
   .ac-item:hover { background: var(--primary); color: white; }
 
-  .filter-bar { display: flex; gap: 8px; margin-bottom: 15px; background: var(--card); padding: 10px; border-radius: 12px; border: 1px solid var(--border); }
-  .filter-bar select { flex: 1; font-size: 12px; }
+  .multi-select-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 700; background: var(--accent); color: var(--sub); }
+  .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-  .action-btn { border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 600; }
+  .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 320px; }
+  .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 12px; }
+  th { background: var(--accent); color: var(--sub); font-size: 9px; font-weight: 800; }
+  
+  .tag { padding: 4px 8px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; margin: 1px; display: inline-block; }
+  .blue { background: var(--win); } .red { background: var(--lose); } .yellow { background: var(--mid); color: #000; }
+
+  .save-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; margin: 10px 0; font-size: 12px; }
+  
+  .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
   .edit { background: #e1f0ff; color: var(--primary); }
   .delete { background: #ffebeb; color: #ff3b30; }
+  .collapsed { display: none !important; }
+  .section-title { font-size: 16px; font-weight: 800; margin: 25px 0 12px; display: flex; justify-content: space-between; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="nav-top">
-    <a href="index.html" class="back-btn">← Home</a>
+    <div style="font-weight: 800; font-size: 18px;">🎱 Billiard V8.7</div>
     <button class="mode-btn" onclick="toggleTheme()">🌓 Theme</button>
   </div>
 
   <div class="input-card">
-    <div class="row-single">
-      <div class="input-group"><label>Match Date</label><input type="date" id="date"></div>
-    </div>
-    <div class="row-double">
+    <div class="input-group"><label>Match Date</label><input type="date" id="date"></div>
+    <div style="display:flex; gap:10px;">
       <div class="input-group">
-        <label>Location</label>
-        <input type="text" id="loc" placeholder="Club Name..." autocomplete="off">
+        <label>Location</label><input type="text" id="loc" placeholder="Club Name..." autocomplete="off">
         <div id="res-loc" class="ac-box"></div>
       </div>
       <div class="input-group">
-        <label>Table</label>
-        <input type="text" id="table" placeholder="Table Info..." autocomplete="off">
+        <label>Table</label><input type="text" id="table" placeholder="Table No..." autocomplete="off">
         <div id="res-table" class="ac-box"></div>
       </div>
     </div>
-    <div style="display:flex; justify-content:space-between; margin-bottom:5px; padding:0 2px;">
-        <label>Players Name</label>
-        <label style="width:50px; text-align:center;">Score</label>
-    </div>
+    
+    <label>Players & Scores</label>
     <div id="playerInputs"></div>
-    <button class="add-player-btn" onclick="window.addPlayerField()">+ Add Player</button>
+    <button class="add-player-btn" onclick="addPlayerField()">+ Add Player</button>
     <button class="save-btn" id="btnSave" onclick="saveMatch()">Save Match Result</button>
   </div>
 
-  <div class="filter-bar">
-    <select id="filterMonth" onchange="render()"><option value="all">All Months</option>
-      <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-    </select>
-    <select id="filterYear" onchange="render()"><option value="all">All Years</option></select>
-  </div>
-
-  <div class="section-title" onclick="toggleMainSection('leaderboardSection')">🏆 H2H Points Leaderboard <span>▼</span></div>
-  <div id="leaderboardSection" style="margin-bottom: 20px;">
-    <label style="font-size: 9px; font-weight: 800; color: var(--sub); display:block; margin-bottom:8px;">SELECT PLAYERS TO COMPARE (MULTI-SELECT):</label>
+  <div class="section-title" onclick="toggleMainSection('leaderboardSection')">🏆 H2H Analysis <span>▼</span></div>
+  <div id="leaderboardSection">
+    <label style="font-size: 9px; font-weight: 800; color: var(--sub);">SELECT PLAYERS (MULTI-FILTER):</label>
     <div id="multiPlayerFilter" class="multi-select-box"></div>
     
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Matchup</th><th>Accumulated Score</th></tr></thead>
+        <thead><tr><th>Matchup</th><th>Total Points</th></tr></thead>
         <tbody id="leaderboardBody"></tbody>
       </table>
     </div>
 
-    <div class="chart-container">
-      <canvas id="leaderboardChart"></canvas>
-    </div>
+    <div class="chart-container"><canvas id="leaderboardChart"></canvas></div>
   </div>
 
-  <div class="section-title" onclick="toggleMainSection('tableStats')">🎱 Table Stats <span>▼</span></div>
+  <div class="section-title" onclick="toggleMainSection('tableStats')">📊 Table Performance <span>▼</span></div>
   <div id="tableStats" class="collapsed"></div>
 
-  <div class="section-title" onclick="toggleMainSection('locStats')">📍 Location Stats <span>▼</span></div>
+  <div class="section-title" onclick="toggleMainSection('locStats')">📍 Venue Stats <span>▼</span></div>
   <div id="locStats" class="collapsed"></div>
 
-  <div class="section-title">📜 History</div>
+  <div class="section-title">📜 Match History</div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>Date</th><th>Score</th><th>Loc</th><th>Table</th><th>Act</th></tr></thead>
+      <thead><tr><th>Date</th><th>Result</th><th>Loc</th><th>Table</th><th>Act</th></tr></thead>
       <tbody id="historyBody"></tbody>
     </table>
   </div>
@@ -168,27 +140,48 @@ const DB_PATH = 'billiard_final_v8';
 let allData = {}, masterP = [], masterL = [], masterT = [], selectedPlayers = [];
 let editingId = null, myChart = null;
 
-const dateIn = document.getElementById('date');
-dateIn.value = new Date().toISOString().split('T')[0];
+// --- AUTOCOMPLETE ENGINE ---
+function initAC(inputId, boxId, dataList) {
+    const input = document.getElementById(inputId);
+    const box = document.getElementById(boxId);
+    if(!input || !box) return;
 
-function setupAC(input, list, data) {
-  if (!input || !list) return;
-  input.oninput = () => {
-    const val = input.value.toLowerCase().trim();
-    list.innerHTML = "";
-    if(!val) { list.style.display = "none"; return; }
-    const filtered = data.filter(x => x.toLowerCase().includes(val));
-    if(filtered.length > 0) {
-      list.style.display = "block";
-      filtered.forEach(t => {
-        const d = document.createElement('div');
-        d.className = "ac-item"; d.innerText = t;
-        d.onclick = (e) => { e.stopPropagation(); input.value = t; list.style.display = "none"; };
-        list.appendChild(d);
-      });
-    } else { list.style.display = "none"; }
-  };
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase().trim();
+        box.innerHTML = "";
+        if(!val) { box.style.display = "none"; return; }
+        const filtered = dataList.filter(x => x.toLowerCase().includes(val));
+        if(filtered.length > 0) {
+            box.style.display = "block";
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "ac-item";
+                div.innerText = item;
+                div.onclick = () => { input.value = item; box.style.display = "none"; };
+                box.appendChild(div);
+            });
+        } else { box.style.display = "none"; }
+    });
 }
+
+// Function specifically for Dynamic Player Rows
+window.attachPlayerAC = (input, box) => {
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase().trim();
+        box.innerHTML = "";
+        if(!val) { box.style.display = "none"; return; }
+        const filtered = masterP.filter(x => x.toLowerCase().includes(val));
+        if(filtered.length > 0) {
+            box.style.display = "block";
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "ac-item"; div.innerText = p;
+                div.onclick = () => { input.value = p; box.style.display = "none"; };
+                box.appendChild(div);
+            });
+        } else { box.style.display = "none"; }
+    });
+};
 
 window.addPlayerField = (name = "", score = "") => {
     const container = document.getElementById('playerInputs');
@@ -196,205 +189,161 @@ window.addPlayerField = (name = "", score = "") => {
     div.className = 'player-row';
     div.innerHTML = `
         <div class="p-name-wrap">
-            <input type="text" class="p-name" placeholder="Name" value="${name}" autocomplete="off">
+            <input type="text" class="p-name" placeholder="Player Name" value="${name}" autocomplete="off">
             <div class="ac-box"></div>
         </div>
-        <div class="p-score-wrap"><input type="number" class="p-score" placeholder="0" value="${score}"></div>
+        <div class="p-score-wrap"><input type="number" class="p-score" value="${score}" placeholder="0"></div>
     `;
     container.appendChild(div);
-    setupAC(div.querySelector('.p-name'), div.querySelector('.ac-box'), masterP);
+    const inp = div.querySelector('.p-name');
+    const box = div.querySelector('.ac-box');
+    window.attachPlayerAC(inp, box);
 };
 
+// --- DATA HANDLING ---
 onValue(ref(db, DB_PATH), snap => {
-  allData = snap.val() || {};
-  let pSet = new Set(), lSet = new Set(), tSet = new Set(), ySet = new Set();
-  Object.keys(allData).forEach(d => {
-    ySet.add(d.split('-')[0]);
-    Object.values(allData[d]).forEach(m => {
-      if(m.location !== "-") lSet.add(m.location);
-      if(m.table !== "-") tSet.add(m.table);
-      if(m.players) m.players.forEach(p => pSet.add(p.name));
+    allData = snap.val() || {};
+    let pSet = new Set(), lSet = new Set(), tSet = new Set();
+    Object.values(allData).forEach(dateGroup => {
+        Object.values(dateGroup).forEach(m => {
+            if(m.location && m.location !== "-") lSet.add(m.location);
+            if(m.table && m.table !== "-") tSet.add(m.table);
+            if(m.players) m.players.forEach(p => pSet.add(p.name));
+        });
     });
-  });
-  masterP = [...pSet].sort(); masterL = [...lSet].sort(); masterT = [...tSet].sort();
-  
-  const fY = document.getElementById('filterYear');
-  const curY = fY.value; fY.innerHTML = '<option value="all">All Years</option>';
-  [...ySet].sort().reverse().forEach(y => fY.innerHTML += `<option value="${y}">${y}</option>`);
-  if(curY) fY.value = curY;
-
-  renderMultiSelect();
-  setupAC(document.getElementById('loc'), document.getElementById('res-loc'), masterL);
-  setupAC(document.getElementById('table'), document.getElementById('res-table'), masterT);
-  render();
+    masterP = [...pSet].sort(); masterL = [...lSet].sort(); masterT = [...tSet].sort();
+    
+    initAC('loc', 'res-loc', masterL);
+    initAC('table', 'res-table', masterT);
+    render();
 });
 
-function renderMultiSelect() {
-    const box = document.getElementById('multiPlayerFilter');
-    box.innerHTML = "";
+window.saveMatch = () => {
+    const date = document.getElementById('date').value;
+    const loc = document.getElementById('loc').value.trim() || "-";
+    const table = document.getElementById('table').value.trim() || "-";
+    const pNames = document.querySelectorAll('.p-name'), pScores = document.querySelectorAll('.p-score');
+    let players = [];
+    pNames.forEach((el, i) => {
+        if(el.value.trim()) players.push({ name: el.value.trim(), score: parseInt(pScores[i].value) || 0 });
+    });
+    if(players.length < 2 || !date) return alert("Complete the form!");
+
+    const path = editingId ? `${DB_PATH}/${date}/${editingId}` : `${DB_PATH}/${date}`;
+    const action = editingId ? set(ref(db, path), { players, location: loc, table: table, timestamp: Date.now() }) 
+                             : push(ref(db, path), { players, location: loc, table: table, timestamp: Date.now() });
+
+    action.then(() => {
+        editingId = null; document.getElementById('btnSave').innerText = "Save Match Result";
+        document.getElementById('playerInputs').innerHTML = ""; 
+        addPlayerField(); addPlayerField();
+        document.getElementById('loc').value = ""; document.getElementById('table').value = "";
+    });
+};
+
+window.render = () => {
+    const hist = document.getElementById('historyBody');
+    const lb = document.getElementById('leaderboardBody');
+    const chips = document.getElementById('multiPlayerFilter');
+    hist.innerHTML = ""; lb.innerHTML = ""; chips.innerHTML = "";
+
+    let h2h = {}, chartData = {};
+    
+    // Render Chips
     masterP.forEach(p => {
-        const chip = document.createElement('div');
-        chip.className = `chip ${selectedPlayers.includes(p) ? 'active' : ''}`;
-        chip.innerText = p;
-        chip.onclick = () => {
+        const c = document.createElement('div');
+        c.className = `chip ${selectedPlayers.includes(p) ? 'active' : ''}`;
+        c.innerText = p;
+        c.onclick = () => {
             if(selectedPlayers.includes(p)) selectedPlayers = selectedPlayers.filter(x => x !== p);
             else selectedPlayers.push(p);
             render();
         };
-        box.appendChild(chip);
+        chips.appendChild(c);
     });
-}
 
-window.saveMatch = () => {
-  const names = document.querySelectorAll('.p-name'), scores = document.querySelectorAll('.p-score');
-  let players = [];
-  names.forEach((el, i) => { if(el.value.trim()){ players.push({name: el.value.trim(), score: parseInt(scores[i].value)||0}); }});
-  if(players.length < 2) return alert("Min 2 players!");
-  const payload = { players, location: document.getElementById('loc').value.trim() || "-", table: document.getElementById('table').value.trim() || "-", timestamp: Date.now() };
-  const target = editingId ? ref(db, `${DB_PATH}/${dateIn.value}/${editingId}`) : push(ref(db, `${DB_PATH}/${dateIn.value}`));
-  set(target, payload).then(() => {
-    editingId = null; document.getElementById('btnSave').innerText = "Save Match Result";
-    document.getElementById('playerInputs').innerHTML = ""; addPlayerField(); addPlayerField();
-    document.getElementById('loc').value = ""; document.getElementById('table').value = "";
-  });
-};
+    Object.keys(allData).sort().reverse().forEach(date => {
+        Object.keys(allData[date]).forEach(mid => {
+            const m = allData[date][mid];
+            const pNames = m.players.map(p => p.name);
+            const high = Math.max(...m.players.map(p => p.score));
 
-window.render = () => {
-  const tbody = document.getElementById('historyBody');
-  const lbBody = document.getElementById('leaderboardBody');
-  tbody.innerHTML = ""; lbBody.innerHTML = "";
-  
-  let tStats = {}, lStats = {}, h2h = {}, chartDataMap = {};
-  const selM = document.getElementById('filterMonth').value, selY = document.getElementById('filterYear').value;
+            // Render History Row
+            const tr = document.createElement('tr');
+            let res = m.players.map(p => `<span class="tag ${p.score==high?'blue':'red'}">${p.name.split(' ')[0]}:${p.score}</span>`).join("");
+            tr.innerHTML = `<td>${date.slice(5)}</td><td>${res}</td><td>${m.location}</td><td>${m.table}</td>
+                <td><button class="action-btn edit" onclick="editMatch('${date}','${mid}')">✎</button></td>`;
+            hist.appendChild(tr);
 
-  Object.keys(allData).sort().reverse().forEach(d => {
-    const [y, m_str] = d.split('-');
-    Object.keys(allData[d]).sort((a,b) => allData[d][b].timestamp - allData[d][a].timestamp).forEach(mid => {
-      const m = allData[d][mid];
-      if ((selM === 'all' || m_str === selM) && (selY === 'all' || y === selY)) {
-          const scores = m.players.map(p => p.score);
-          const high = Math.max(...scores), low = Math.min(...scores);
-          
-          // Render History
-          const tr = document.createElement('tr');
-          let board = m.players.map(p => {
-            let c = (p.score === high && high !== low) ? 'blue' : (p.score === low && high !== low ? 'red' : 'yellow');
-            return `<span class="tag ${c}">${p.name.split(' ')[0]}:${p.score}</span>`;
-          }).join("");
-          tr.innerHTML = `<td>${d.slice(5)}</td><td>${board}</td><td>${m.location}</td><td>${m.table}</td>
-            <td><button class="action-btn edit" onclick="editMatch('${d}','${mid}')">✎</button>
-                <button class="action-btn delete" onclick="delMatch('${d}','${mid}')">✕</button></td>`;
-          tbody.appendChild(tr);
+            // LOGIC FILTER
+            let isVisible = false;
+            if(selectedPlayers.length === 0) isVisible = true;
+            else if(selectedPlayers.length === 1) isVisible = pNames.includes(selectedPlayers[0]);
+            else isVisible = pNames.every(n => selectedPlayers.includes(n));
 
-          // --- LOGIKA FILTER EKSKLUSIF ---
-          // Cek apakah match ini hanya berisi pemain yang dipilih (jika filter aktif)
-          const matchPlayerNames = m.players.map(p => p.name);
-          const isRelevantMatch = selectedPlayers.length === 0 || 
-                                 matchPlayerNames.every(name => selectedPlayers.includes(name));
-
-          if (isRelevantMatch) {
-              m.players.forEach((p1, idx) => {
-                chartDataMap[p1.name] = (chartDataMap[p1.name] || 0) + p1.score;
-
-                // H2H Table
-                for (let j = idx + 1; j < m.players.length; j++) {
-                    const p2 = m.players[j];
-                    const pair = [p1.name, p2.name].sort();
-                    const key = pair.join(" VS ");
-                    if(!h2h[key]) h2h[key] = {};
-                    h2h[key][pair[0]] = (h2h[key][pair[0]] || 0) + (p1.name === pair[0] ? p1.score : p2.score);
-                    h2h[key][pair[1]] = (h2h[key][pair[1]] || 0) + (p1.name === pair[1] ? p1.score : p2.score);
-                }
-              });
-          }
-
-          // Stats Lokasi/Meja (Selalu dihitung untuk semua match)
-          m.players.forEach(p1 => {
-            const win = (p1.score === high && high > 0);
-            [[m.table, tStats], [m.location, lStats]].forEach(([key, obj]) => {
-               if(key === "-") return;
-               if(!obj[key]) obj[key] = {};
-               if(!obj[key][p1.name]) obj[key][p1.name] = {w:0, t:0};
-               obj[key][p1.name].t++; if(win) obj[key][p1.name].w++;
-            });
-          });
-      }
+            if(isVisible) {
+                m.players.forEach((p1, i) => {
+                    chartData[p1.name] = (chartData[p1.name] || 0) + p1.score;
+                    for(let j=i+1; j<m.players.length; j++) {
+                        const p2 = m.players[j];
+                        const key = [p1.name, p2.name].sort().join(" VS ");
+                        if(!h2h[key]) h2h[key] = {};
+                        h2h[key][p1.name] = (h2h[key][p1.name] || 0) + p1.score;
+                        h2h[key][p2.name] = (h2h[key][p2.name] || 0) + p2.score;
+                    }
+                });
+            }
+        });
     });
-  });
 
-  // Render Table H2H
-  Object.keys(h2h).sort().forEach(key => {
-      const s1 = h2h[key][key.split(" VS ")[0]], s2 = h2h[key][key.split(" VS ")[1]];
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td style="font-size:10px; font-weight:700;">${key}</td>
-        <td><span class="tag ${s1>=s2?(s1==s2?'yellow':'blue'):'red'}">${key.split(" VS ")[0].split(' ')[0]}:${s1}</span>
-            <span class="tag ${s2>=s1?(s1==s2?'yellow':'blue'):'red'}">${key.split(" VS ")[1].split(' ')[0]}:${s2}</span></td>`;
-      lbBody.appendChild(tr);
-  });
+    // Render H2H Table
+    Object.keys(h2h).sort().forEach(k => {
+        const names = k.split(" VS ");
+        const s1 = h2h[k][names[0]], s2 = h2h[k][names[1]];
+        lb.innerHTML += `<tr><td style="font-weight:700;">${k}</td>
+            <td><span class="tag ${s1>=s2?'blue':'red'}">${names[0]}:${s1}</span> <span class="tag ${s2>=s1?'blue':'red'}">${names[1]}:${s2}</span></td></tr>`;
+    });
 
-  renderMultiSelect(); // Refresh chips
-  updateChart(chartDataMap);
-  renderStats('tableStats', tStats); 
-  renderStats('locStats', lStats);
+    updateChart(chartData);
 };
 
 function updateChart(dataMap) {
-    const ctx = document.getElementById('leaderboardChart').getContext('2d');
+    const ctx = document.getElementById('leaderboardChart');
     const labels = Object.keys(dataMap).sort((a,b) => dataMap[b] - dataMap[a]);
     const values = labels.map(l => dataMap[l]);
 
-    if (myChart) myChart.destroy();
+    if(myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Points',
-                data: values,
-                backgroundColor: '#0071e3',
-                borderRadius: 8
-            }]
+            datasets: [{ label: 'Total Points', data: values, backgroundColor: '#0071e3', borderRadius: 6 }]
         },
-        options: {
+        options: { 
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+            scales: { x: { grid: { display: false } } }
         }
     });
 }
 
-function renderStats(id, stats) {
-  const container = document.getElementById(id); container.innerHTML = "";
-  Object.keys(stats).sort().forEach(key => {
-    const card = document.createElement('div'); card.className = "stat-card";
-    const head = document.createElement('div'); head.className = "card-header";
-    head.innerHTML = `<h4>${key}</h4><span>▼</span>`;
-    const body = document.createElement('div'); body.className = "card-content collapsed";
-    Object.keys(stats[key]).sort((a,b)=>(stats[key][b].w/stats[key][b].t)-(stats[key][a].w/stats[key][a].t)).forEach((p, i) => {
-      const d = stats[key][p], wr = Math.round((d.w / d.t) * 100);
-      body.innerHTML += `<div class="bar-row"><div class="bar-label"><span>${p}</span><span>${wr}% (${d.w}/${d.t})</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${wr}%; background:${['#0071e3','#34c759','#ff9500','#af52de'][i%4]}"></div></div></div>`;
-    });
-    head.onclick = () => body.classList.toggle('collapsed');
-    card.append(head, body); container.appendChild(card);
-  });
-}
+window.toggleMainSection = (id) => document.getElementById(id).classList.toggle('collapsed');
 
-window.toggleMainSection = (id) => {
-    const el = document.getElementById(id);
-    el.classList.toggle('collapsed');
+window.editMatch = (date, mid) => {
+    const m = allData[date][mid]; editingId = mid;
+    document.getElementById('date').value = date;
+    document.getElementById('loc').value = m.location;
+    document.getElementById('table').value = m.table;
+    document.getElementById('playerInputs').innerHTML = "";
+    m.players.forEach(p => addPlayerField(p.name, p.score));
+    document.getElementById('btnSave').innerText = "Update Match";
+    window.scrollTo({top: 0, behavior: 'smooth'});
 };
 
-window.editMatch = (d, id) => {
-  const m = allData[d][id]; editingId = id; dateIn.value = d;
-  document.getElementById('loc').value = m.location; document.getElementById('table').value = m.table;
-  document.getElementById('playerInputs').innerHTML = "";
-  m.players.forEach(p => addPlayerField(p.name, p.score));
-  document.getElementById('btnSave').innerText = "Update Match";
-  window.scrollTo({top:0, behavior:'smooth'});
-};
-
-window.delMatch = (d, id) => { if(confirm("Delete?")) remove(ref(db, `${DB_PATH}/${d}/${id}`)); };
+// Start
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+addPlayerField(); addPlayerField();
+document.addEventListener('click', (e) => { if(!e.target.classList.contains('p-name')) document.querySelectorAll('.ac-box').forEach(b => b.style.display='none'); });
 
 window.toggleTheme = () => {
   const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -402,10 +351,6 @@ window.toggleTheme = () => {
   localStorage.setItem('billiard-theme', next);
 };
 if(localStorage.getItem('billiard-theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-
-document.addEventListener('click', () => document.querySelectorAll('.ac-box').forEach(b => b.style.display = 'none'));
-
-addPlayerField(); addPlayerField();
 </script>
 </body>
 </html>
