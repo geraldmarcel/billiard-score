@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V9.5</title>
+<title>Billiard Pro Tracker V9.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -25,12 +25,13 @@
   .back-btn { text-decoration: none; color: var(--sub); font-size: 13px; font-weight: 600; }
   .mode-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
 
-  /* Input & Filter Card */
+  /* Cards */
   .card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
   .input-group { display: flex; flex-direction: column; flex: 1; position: relative; margin-bottom: 12px; }
   label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; letter-spacing: 0.5px; }
   input, select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box; }
   
+  /* Player Row UI */
   .player-header { display: flex; gap: 10px; margin-bottom: 5px; }
   .player-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
   .p-name-wrap { flex: 1; position: relative; }
@@ -48,12 +49,25 @@
   .reset-btn { flex: 1; padding: 15px; background: var(--accent); color: var(--sub); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 13px; }
   .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; margin: 10px 0; font-size: 12px; }
 
-  /* Table & Others */
+  /* Filter & Chips */
   .multi-select-box { background: var(--accent); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 700; background: var(--card); color: var(--sub); }
   .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .filter-bar { display: flex; gap: 8px; margin-top: 10px; }
+
+  /* Compact Analytics */
+  .chart-container { 
+    background: var(--card); 
+    border-radius: 18px; 
+    border: 1px solid var(--border); 
+    padding: 10px; 
+    margin-top: 10px; 
+    height: 220px; /* Diperkecil dari 320px */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
   
-  .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 320px; }
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; min-width: 450px; }
   th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 12px; }
@@ -297,7 +311,16 @@ function updateChart(data) {
     myChart = new Chart(ctx, {
         type: 'bar',
         data: { labels: labs, datasets: [{ data: labs.map(l => data[l]), backgroundColor: labs.map(l => getPColor(l)), borderRadius: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: true, // Diubah menjadi true
+            aspectRatio: 2, // Rasio lebar 2x tinggi
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, grid: { display: false } },
+              x: { grid: { display: false } }
+            }
+        }
     });
 }
 
