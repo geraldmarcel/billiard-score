@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V8.8</title>
+<title>Billiard Pro Tracker V8.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -32,7 +32,6 @@
   .player-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
   .p-name-wrap { flex: 1; position: relative; }
   .p-score-wrap { width: 60px; } 
-  .p-score { text-align: center; font-weight: 800; color: var(--primary); }
 
   .ac-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; z-index: 9999; display: none; max-height: 150px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
   .ac-item { padding: 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -44,7 +43,7 @@
 
   .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 320px; }
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
-  table { width: 100%; border-collapse: collapse; min-width: 500px; }
+  table { width: 100%; border-collapse: collapse; min-width: 450px; }
   th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 12px; }
   th { background: var(--accent); color: var(--sub); font-size: 9px; font-weight: 800; text-transform: uppercase; }
   
@@ -60,19 +59,19 @@
 
   .section-content { display: block; margin-bottom: 20px; }
   .collapsed { display: none !important; }
-  .section-title { font-size: 16px; font-weight: 800; margin: 25px 0 12px; display: flex; justify-content: space-between; cursor: pointer; padding: 5px; background: var(--accent); border-radius: 8px; }
+  .section-title { font-size: 15px; font-weight: 800; margin: 25px 0 12px; display: flex; justify-content: space-between; cursor: pointer; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
 
   .bar-row { margin-bottom: 12px; }
-  .bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; font-weight: 600; }
-  .bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; transition: width 0.5s ease-in-out; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; font-weight: 700; }
+  .bar-bg { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="nav-top">
-    <div style="font-weight: 800; font-size: 20px;">🎱 Billiard V8.8</div>
+    <div style="font-weight: 800; font-size: 20px; letter-spacing: -0.5px;">🎱 Billiard V8.9</div>
     <button class="mode-btn" onclick="toggleTheme()">🌓 Theme</button>
   </div>
 
@@ -111,10 +110,10 @@
   </div>
 
   <div class="section-title" onclick="toggleMainSection('tableStats')">📊 Table Performance <span>▼</span></div>
-  <div id="tableStats" class="section-content collapsed"></div>
+  <div id="tableStats" class="section-content collapsed" style="padding:10px; background:var(--card); border: 1px solid var(--border); border-radius:12px;"></div>
 
   <div class="section-title" onclick="toggleMainSection('locStats')">📍 Venue Stats <span>▼</span></div>
-  <div id="locStats" class="section-content collapsed"></div>
+  <div id="locStats" class="section-content collapsed" style="padding:10px; background:var(--card); border: 1px solid var(--border); border-radius:12px;"></div>
 
   <div class="section-title">📜 Match History</div>
   <div class="table-wrapper">
@@ -147,26 +146,29 @@ const DB_PATH = 'billiard_final_v8';
 let allData = {}, masterP = [], masterL = [], masterT = [], selectedPlayers = [];
 let editingId = null, myChart = null;
 
-// --- AUTOCOMPLETE ---
+// User Colors Map
+const userColors = ["#0071e3", "#34c759", "#ff9500", "#af52de", "#ff3b30", "#5856d6", "#ff2d55", "#00c7be"];
+function getPColor(name) {
+    const idx = masterP.indexOf(name);
+    return userColors[idx % userColors.length];
+}
+
+// Autocomplete
 function initAC(inputId, boxId, dataList) {
     const input = document.getElementById(inputId);
     const box = document.getElementById(boxId);
     if(!input || !box) return;
-
     input.oninput = () => {
         const val = input.value.toLowerCase().trim();
         box.innerHTML = "";
         if(!val) { box.style.display = "none"; return; }
-        const filtered = dataList.filter(x => x.toLowerCase().includes(val));
-        if(filtered.length > 0) {
-            box.style.display = "block";
-            filtered.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "ac-item"; div.innerText = item;
-                div.onclick = () => { input.value = item; box.style.display = "none"; };
-                box.appendChild(div);
-            });
-        } else { box.style.display = "none"; }
+        dataList.filter(x => x.toLowerCase().includes(val)).forEach(item => {
+            const div = document.createElement('div');
+            div.className = "ac-item"; div.innerText = item;
+            div.onclick = () => { input.value = item; box.style.display = "none"; };
+            box.appendChild(div);
+        });
+        box.style.display = box.children.length ? "block" : "none";
     };
 }
 
@@ -179,30 +181,23 @@ window.addPlayerField = (name = "", score = "") => {
             <input type="text" class="p-name" placeholder="Name" value="${name}" autocomplete="off">
             <div class="ac-box"></div>
         </div>
-        <div class="p-score-wrap"><input type="number" class="p-score" value="${score}" placeholder="0"></div>
+        <div class="p-score-wrap"><input type="number" class="p-score" value="${score}" placeholder="0" style="text-align:center; font-weight:800;"></div>
     `;
     container.appendChild(div);
-    const inp = div.querySelector('.p-name');
-    const box = div.querySelector('.ac-box');
-    
+    const inp = div.querySelector('.p-name'), box = div.querySelector('.ac-box');
     inp.oninput = () => {
         const val = inp.value.toLowerCase().trim();
         box.innerHTML = "";
         if(!val) { box.style.display = "none"; return; }
-        const filtered = masterP.filter(x => x.toLowerCase().includes(val));
-        if(filtered.length > 0) {
-            box.style.display = "block";
-            filtered.forEach(p => {
-                const d = document.createElement('div');
-                d.className = "ac-item"; d.innerText = p;
-                d.onclick = () => { inp.value = p; box.style.display = "none"; };
-                box.appendChild(d);
-            });
-        } else { box.style.display = "none"; }
+        masterP.filter(x => x.toLowerCase().includes(val)).forEach(p => {
+            const d = document.createElement('div'); d.className = "ac-item"; d.innerText = p;
+            d.onclick = () => { inp.value = p; box.style.display = "none"; };
+            box.appendChild(d);
+        });
+        box.style.display = box.children.length ? "block" : "none";
     };
 };
 
-// --- CORE RENDER ---
 onValue(ref(db, DB_PATH), snap => {
     allData = snap.val() || {};
     let pSet = new Set(), lSet = new Set(), tSet = new Set();
@@ -214,7 +209,6 @@ onValue(ref(db, DB_PATH), snap => {
         });
     });
     masterP = [...pSet].sort(); masterL = [...lSet].sort(); masterT = [...tSet].sort();
-    
     initAC('loc', 'res-loc', masterL);
     initAC('table', 'res-table', masterT);
     render();
@@ -226,60 +220,41 @@ window.saveMatch = () => {
     const table = document.getElementById('table').value.trim() || "-";
     const pNames = document.querySelectorAll('.p-name'), pScores = document.querySelectorAll('.p-score');
     let players = [];
-    pNames.forEach((el, i) => {
-        if(el.value.trim()) players.push({ name: el.value.trim(), score: parseInt(pScores[i].value) || 0 });
-    });
-    if(players.length < 2 || !date) return alert("Please fill all data!");
-
+    pNames.forEach((el, i) => { if(el.value.trim()) players.push({ name: el.value.trim(), score: parseInt(pScores[i].value) || 0 }); });
+    if(players.length < 2 || !date) return alert("Fill data!");
     const path = editingId ? `${DB_PATH}/${date}/${editingId}` : `${DB_PATH}/${date}`;
-    const action = editingId ? set(ref(db, path), { players, location: loc, table: table, timestamp: Date.now() }) 
-                             : push(ref(db, path), { players, location: loc, table: table, timestamp: Date.now() });
-
+    const action = editingId ? set(ref(db, path), { players, location: loc, table, timestamp: Date.now() }) : push(ref(db, path), { players, location: loc, table, timestamp: Date.now() });
     action.then(() => {
         editingId = null; document.getElementById('btnSave').innerText = "Save Match Result";
-        document.getElementById('playerInputs').innerHTML = ""; 
-        addPlayerField(); addPlayerField();
+        document.getElementById('playerInputs').innerHTML = ""; addPlayerField(); addPlayerField();
         document.getElementById('loc').value = ""; document.getElementById('table').value = "";
     });
 };
 
 window.render = () => {
-    const hist = document.getElementById('historyBody');
-    const lb = document.getElementById('leaderboardBody');
-    const chips = document.getElementById('multiPlayerFilter');
+    const hist = document.getElementById('historyBody'), lb = document.getElementById('leaderboardBody'), chips = document.getElementById('multiPlayerFilter');
     hist.innerHTML = ""; lb.innerHTML = ""; chips.innerHTML = "";
-
     let h2h = {}, chartData = {}, tStats = {}, lStats = {};
     
     masterP.forEach(p => {
-        const c = document.createElement('div');
-        c.className = `chip ${selectedPlayers.includes(p) ? 'active' : ''}`;
-        c.innerText = p;
-        c.onclick = () => {
+        const c = document.createElement('div'); c.className = `chip ${selectedPlayers.includes(p) ? 'active' : ''}`;
+        c.innerText = p; c.onclick = () => { 
             if(selectedPlayers.includes(p)) selectedPlayers = selectedPlayers.filter(x => x !== p);
-            else selectedPlayers.push(p);
-            render();
+            else selectedPlayers.push(p); render();
         };
         chips.appendChild(c);
     });
 
     Object.keys(allData).sort().reverse().forEach(date => {
         Object.keys(allData[date]).forEach(mid => {
-            const m = allData[date][mid];
-            const pNames = m.players.map(p => p.name);
-            const high = Math.max(...m.players.map(p => p.score));
-
-            // 1. All History (Tanpa Filter)
+            const m = allData[date][mid], pNames = m.players.map(p => p.name), high = Math.max(...m.players.map(p => p.score));
             const tr = document.createElement('tr');
             let res = m.players.map(p => `<span class="tag ${p.score==high?'blue':'red'}">${p.name.split(' ')[0]}:${p.score}</span>`).join("");
             tr.innerHTML = `<td>${date.slice(5)}</td><td>${res}</td><td>${m.location}</td><td>${m.table}</td>
-                <td>
-                    <button class="action-btn edit" onclick="window.editMatch('${date}','${mid}')">✎</button>
-                    <button class="action-btn delete" onclick="window.delMatch('${date}','${mid}')">✕</button>
-                </td>`;
+                <td><button class="action-btn edit" onclick="window.editMatch('${date}','${mid}')">✎</button>
+                <button class="action-btn delete" onclick="window.delMatch('${date}','${mid}')">✕</button></td>`;
             hist.appendChild(tr);
 
-            // 2. Performance Stats Logic (Selalu dihitung)
             m.players.forEach(p => {
                 const win = (p.score === high && high > 0);
                 [[m.table, tStats], [m.location, lStats]].forEach(([key, obj]) => {
@@ -290,25 +265,18 @@ window.render = () => {
                 });
             });
 
-            // 3. Leaderboard & Chart Logic (Berdasarkan Filter)
-            let isRelevant = false;
-            if(selectedPlayers.length === 0) isRelevant = true;
-            else if(selectedPlayers.length === 1) isRelevant = pNames.includes(selectedPlayers[0]);
-            else isRelevant = pNames.every(n => selectedPlayers.includes(n));
+            // LOGIC: If selecting players, show only matches where ALL selected players are present
+            let isRelevant = selectedPlayers.length === 0 || selectedPlayers.every(n => pNames.includes(n));
 
             if(isRelevant) {
                 m.players.forEach((p1, i) => {
-                    // Hanya masukkan ke chart jika player tersebut ada di filter (atau jika filter kosong)
                     if(selectedPlayers.length === 0 || selectedPlayers.includes(p1.name)) {
                         chartData[p1.name] = (chartData[p1.name] || 0) + p1.score;
                     }
-
-                    for(let j=i+1; j<m.players.length; j++) {
+                    for(let j=i+1; j<m.players.length; j++){
                         const p2 = m.players[j];
-                        const pair = [p1.name, p2.name].sort();
-                        if(selectedPlayers.length > 0 && (!selectedPlayers.includes(pair[0]) || !selectedPlayers.includes(pair[1]))) continue;
-                        
-                        const key = pair.join(" VS ");
+                        if(selectedPlayers.length > 1 && (!selectedPlayers.includes(p1.name) || !selectedPlayers.includes(p2.name))) continue;
+                        const key = [p1.name, p2.name].sort().join(" VS ");
                         if(!h2h[key]) h2h[key] = {};
                         h2h[key][p1.name] = (h2h[key][p1.name] || 0) + p1.score;
                         h2h[key][p2.name] = (h2h[key][p2.name] || 0) + p2.score;
@@ -318,36 +286,32 @@ window.render = () => {
         });
     });
 
-    // Render H2H Table
     Object.keys(h2h).sort().forEach(k => {
-        const names = k.split(" VS ");
-        const s1 = h2h[k][names[0]] || 0, s2 = h2h[k][names[1]] || 0;
-        lb.innerHTML += `<tr><td style="font-weight:700;">${k}</td>
-            <td><span class="tag ${s1>=s2?'blue':'red'}">${names[0].split(' ')[0]}:${s1}</span> 
-                <span class="tag ${s2>=s1?'blue':'red'}">${names[1].split(' ')[0]}:${s2}</span></td></tr>`;
+        const names = k.split(" VS "), s1 = h2h[k][names[0]] || 0, s2 = h2h[k][names[1]] || 0;
+        lb.innerHTML += `<tr><td style="font-weight:700;">${k}</td><td><span class="tag ${s1>=s2?'blue':'red'}">${names[0]}:${s1}</span> <span class="tag ${s2>=s1?'blue':'red'}">${names[1]}:${s2}</span></td></tr>`;
     });
 
     updateChart(chartData);
-    renderStats('tableStats', tStats);
-    renderStats('locStats', lStats);
+    renderStats('tableStats', tStats); renderStats('locStats', lStats);
 };
 
 function updateChart(dataMap) {
     const ctx = document.getElementById('leaderboardChart');
     const labels = Object.keys(dataMap).sort((a,b) => dataMap[b] - dataMap[a]);
     const values = labels.map(l => dataMap[l]);
+    const colors = labels.map(l => getPColor(l));
 
     if(myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{ label: 'Points', data: values, backgroundColor: '#0071e3', borderRadius: 6 }]
+            datasets: [{ data: values, backgroundColor: colors, borderRadius: 6 }]
         },
         options: { 
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { x: { grid: { display: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 }
@@ -355,52 +319,35 @@ function updateChart(dataMap) {
 function renderStats(id, stats) {
     const container = document.getElementById(id); container.innerHTML = "";
     Object.keys(stats).sort().forEach(venue => {
-        const card = document.createElement('div'); card.style.marginBottom = "15px";
-        card.innerHTML = `<h4 style="margin:10px 0; font-size:13px; color:var(--primary)">${venue}</h4>`;
+        const card = document.createElement('div'); card.style.marginBottom = "20px";
+        card.innerHTML = `<div style="font-weight:800; font-size:12px; margin-bottom:10px; color:var(--sub)">${venue.toUpperCase()}</div>`;
         Object.keys(stats[venue]).sort((a,b) => (stats[venue][b].w/stats[venue][b].t) - (stats[venue][a].w/stats[venue][a].t)).forEach(p => {
             const d = stats[venue][p], wr = Math.round((d.w/d.t)*100);
             card.innerHTML += `<div class="bar-row"><div class="bar-label"><span>${p}</span><span>${wr}% (${d.w}/${d.t})</span></div>
-                <div class="bar-bg"><div class="bar-fill" style="width:${wr}%; background:var(--primary)"></div></div></div>`;
+                <div class="bar-bg"><div class="bar-fill" style="width:${wr}%; background:${getPColor(p)}"></div></div></div>`;
         });
         container.appendChild(card);
     });
 }
 
-window.toggleMainSection = (id) => {
-    const el = document.getElementById(id);
-    if (el.classList.contains('collapsed')) el.classList.remove('collapsed');
-    else el.classList.add('collapsed');
-};
-
+window.toggleMainSection = (id) => document.getElementById(id).classList.toggle('collapsed');
 window.editMatch = (date, mid) => {
     const m = allData[date][mid]; editingId = mid;
-    document.getElementById('date').value = date;
-    document.getElementById('loc').value = m.location;
-    document.getElementById('table').value = m.table;
-    document.getElementById('playerInputs').innerHTML = "";
+    document.getElementById('date').value = date; document.getElementById('loc').value = m.location;
+    document.getElementById('table').value = m.table; document.getElementById('playerInputs').innerHTML = "";
     m.players.forEach(p => window.addPlayerField(p.name, p.score));
-    document.getElementById('btnSave').innerText = "Update Match";
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    document.getElementById('btnSave').innerText = "Update Match"; window.scrollTo({top: 0, behavior: 'smooth'});
 };
-
-window.delMatch = (date, mid) => {
-    if(confirm("Permanently delete this match?")) remove(ref(db, `${DB_PATH}/${date}/${mid}`));
-};
-
+window.delMatch = (date, mid) => { if(confirm("Delete match?")) remove(ref(db, `${DB_PATH}/${date}/${mid}`)); };
 window.toggleTheme = () => {
   const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.body.setAttribute('data-theme', next);
-  localStorage.setItem('billiard-theme', next);
+  document.body.setAttribute('data-theme', next); localStorage.setItem('billiard-theme', next);
 };
 
-// Initial Setup
 document.getElementById('date').value = new Date().toISOString().split('T')[0];
 if(localStorage.getItem('billiard-theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
 addPlayerField(); addPlayerField();
-
-document.addEventListener('click', (e) => {
-    if(!e.target.classList.contains('p-name')) document.querySelectorAll('.ac-box').forEach(b => b.style.display='none');
-});
+document.addEventListener('click', (e) => { if(!e.target.classList.contains('p-name')) document.querySelectorAll('.ac-box').forEach(b => b.style.display='none'); });
 </script>
 </body>
 </html>
