@@ -67,7 +67,7 @@
   .tag { padding: 4px 8px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; margin: 1px; display: inline-block; }
   .blue { background: var(--win); } .red { background: var(--lose); }
 
-  .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+  .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; margin: 2px; }
   .edit { background: #e1f0ff; color: var(--primary); }
   .delete { background: #ffebeb; color: #ff3b30; }
 
@@ -261,7 +261,10 @@ window.render = () => {
                 const tr = document.createElement('tr');
                 let res = m.players.map(p => `<span class="tag ${p.score==hi?'blue':'red'}">${p.name.split(' ')[0]}:${p.score}</span>`).join("");
                 tr.innerHTML = `<td>${date.slice(5)}</td><td>${res}</td><td>${m.location}</td><td>${m.table}</td>
-                    <td><button class="action-btn edit" onclick="window.editMatch('${date}','${mid}')">✎</button></td>`;
+                    <td>
+                        <button class="action-btn edit" onclick="window.editMatch('${date}','${mid}')">✎</button>
+                        <button class="action-btn delete" onclick="window.delMatch('${date}','${mid}')">✕</button>
+                    </td>`;
                 hBody.appendChild(tr);
                 m.players.forEach(p => {
                     const win = (p.score === hi && hi > 0);
@@ -328,6 +331,15 @@ window.editMatch = (d, mid) => {
     m.players.forEach(p => window.addPlayerField(p.name, p.score));
     document.getElementById('btnSave').innerText = "Update Match"; window.scrollTo({top: 0, behavior: 'smooth'});
 };
+
+window.delMatch = (d, mid) => {
+    if(confirm("Hapus data ini secara permanen?")) {
+        remove(ref(db, `${DB_PATH}/${d}/${mid}`))
+            .then(() => { if(editingId === mid) window.resetForm(); })
+            .catch(e => alert("Gagal menghapus: " + e.message));
+    }
+};
+
 window.toggleTheme = () => {
     const n = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.body.setAttribute('data-theme', n); localStorage.setItem('billiard-theme', n);
