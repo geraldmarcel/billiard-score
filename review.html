@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V8.5</title>
+<title>Billiard Pro Tracker V8.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -41,14 +41,18 @@
   .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 8px; border-radius: 10px; width: 100%; cursor: pointer; font-size: 12px; margin-bottom: 15px; }
   .save-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; }
 
-  .section-title { font-size: 16px; font-weight: 700; margin: 25px 0 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .section-title { font-size: 16px; font-weight: 700; margin: 25px 0 10px; display: flex; align-items: center; justify-content: space-between; }
   .stat-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; }
   .card-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--accent); }
   .card-content { padding: 12px; }
   .collapsed { display: none !important; }
 
-  /* Chart Styles */
-  .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-bottom: 20px; height: 300px; position: relative; }
+  /* Multi-Select Player Filter */
+  .multi-select-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 600; background: var(--accent); transition: 0.2s; }
+  .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 300px; position: relative; }
 
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; min-width: 500px; }
@@ -110,30 +114,28 @@
     <select id="filterYear" onchange="render()"><option value="all">All Years</option></select>
   </div>
 
-  <div class="section-title">📊 Leaderboard Chart</div>
-  <div class="chart-container">
-    <canvas id="leaderboardChart"></canvas>
-  </div>
-
   <div class="section-title" onclick="toggleMainSection('leaderboardSection')">🏆 H2H Points Leaderboard <span>▼</span></div>
   <div id="leaderboardSection" style="margin-bottom: 20px;">
-    <div style="margin-bottom: 10px; padding: 0 5px;">
-      <label style="font-size: 9px; font-weight: 800; color: var(--sub);">Filter Matchup by Player:</label>
-      <select id="filterPlayer" onchange="render()" style="margin-top:5px;"></select>
-    </div>
+    <label style="font-size: 9px; font-weight: 800; color: var(--sub); display:block; margin-bottom:8px;">SELECT PLAYERS TO COMPARE (MULTI-SELECT):</label>
+    <div id="multiPlayerFilter" class="multi-select-box"></div>
+    
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Matchup</th><th>Total Accumulated Score</th></tr></thead>
+        <thead><tr><th>Matchup</th><th>Accumulated Score</th></tr></thead>
         <tbody id="leaderboardBody"></tbody>
       </table>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="leaderboardChart"></canvas>
     </div>
   </div>
 
   <div class="section-title" onclick="toggleMainSection('tableStats')">🎱 Table Stats <span>▼</span></div>
-  <div id="tableStats"></div>
+  <div id="tableStats" class="collapsed"></div>
 
   <div class="section-title" onclick="toggleMainSection('locStats')">📍 Location Stats <span>▼</span></div>
-  <div id="locStats"></div>
+  <div id="locStats" class="collapsed"></div>
 
   <div class="section-title">📜 History</div>
   <div class="table-wrapper">
@@ -163,8 +165,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const DB_PATH = 'billiard_final_v8';
 
-let editingId = null, allData = {}, masterP = [], masterL = [], masterT = [];
-let myChart = null; // Variable for Chart instance
+let allData = {}, masterP = [], masterL = [], masterT = [], selectedPlayers = [];
+let editingId = null, myChart = null;
 
 const dateIn = document.getElementById('date');
 dateIn.value = new Date().toISOString().split('T')[0];
@@ -221,15 +223,27 @@ onValue(ref(db, DB_PATH), snap => {
   [...ySet].sort().reverse().forEach(y => fY.innerHTML += `<option value="${y}">${y}</option>`);
   if(curY) fY.value = curY;
 
-  const fP = document.getElementById('filterPlayer');
-  const curP = fP.value; fP.innerHTML = '<option value="all">All Players</option>';
-  masterP.forEach(p => fP.innerHTML += `<option value="${p}">${p}</option>`);
-  if(curP) fP.value = curP;
-
+  renderMultiSelect();
   setupAC(document.getElementById('loc'), document.getElementById('res-loc'), masterL);
   setupAC(document.getElementById('table'), document.getElementById('res-table'), masterT);
   render();
 });
+
+function renderMultiSelect() {
+    const box = document.getElementById('multiPlayerFilter');
+    box.innerHTML = "";
+    masterP.forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = `chip ${selectedPlayers.includes(p) ? 'active' : ''}`;
+        chip.innerText = p;
+        chip.onclick = () => {
+            if(selectedPlayers.includes(p)) selectedPlayers = selectedPlayers.filter(x => x !== p);
+            else selectedPlayers.push(p);
+            render();
+        };
+        box.appendChild(chip);
+    });
+}
 
 window.saveMatch = () => {
   const names = document.querySelectorAll('.p-name'), scores = document.querySelectorAll('.p-score');
@@ -251,7 +265,7 @@ window.render = () => {
   tbody.innerHTML = ""; lbBody.innerHTML = "";
   
   let tStats = {}, lStats = {}, h2h = {}, chartDataMap = {};
-  const selM = document.getElementById('filterMonth').value, selY = document.getElementById('filterYear').value, selP = document.getElementById('filterPlayer').value;
+  const selM = document.getElementById('filterMonth').value, selY = document.getElementById('filterYear').value;
 
   Object.keys(allData).sort().reverse().forEach(d => {
     const [y, m_str] = d.split('-');
@@ -261,7 +275,7 @@ window.render = () => {
           const scores = m.players.map(p => p.score);
           const high = Math.max(...scores), low = Math.min(...scores);
           
-          // History
+          // Render History
           const tr = document.createElement('tr');
           let board = m.players.map(p => {
             let c = (p.score === high && high !== low) ? 'blue' : (p.score === low && high !== low ? 'red' : 'yellow');
@@ -272,11 +286,30 @@ window.render = () => {
                 <button class="action-btn delete" onclick="delMatch('${d}','${mid}')">✕</button></td>`;
           tbody.appendChild(tr);
 
-          // Logic for Stats & Chart
-          m.players.forEach((p1, idx) => {
-            // Accumulate for Chart (All players in filtered matches)
-            chartDataMap[p1.name] = (chartDataMap[p1.name] || 0) + p1.score;
+          // --- LOGIKA FILTER EKSKLUSIF ---
+          // Cek apakah match ini hanya berisi pemain yang dipilih (jika filter aktif)
+          const matchPlayerNames = m.players.map(p => p.name);
+          const isRelevantMatch = selectedPlayers.length === 0 || 
+                                 matchPlayerNames.every(name => selectedPlayers.includes(name));
 
+          if (isRelevantMatch) {
+              m.players.forEach((p1, idx) => {
+                chartDataMap[p1.name] = (chartDataMap[p1.name] || 0) + p1.score;
+
+                // H2H Table
+                for (let j = idx + 1; j < m.players.length; j++) {
+                    const p2 = m.players[j];
+                    const pair = [p1.name, p2.name].sort();
+                    const key = pair.join(" VS ");
+                    if(!h2h[key]) h2h[key] = {};
+                    h2h[key][pair[0]] = (h2h[key][pair[0]] || 0) + (p1.name === pair[0] ? p1.score : p2.score);
+                    h2h[key][pair[1]] = (h2h[key][pair[1]] || 0) + (p1.name === pair[1] ? p1.score : p2.score);
+                }
+              });
+          }
+
+          // Stats Lokasi/Meja (Selalu dihitung untuk semua match)
+          m.players.forEach(p1 => {
             const win = (p1.score === high && high > 0);
             [[m.table, tStats], [m.location, lStats]].forEach(([key, obj]) => {
                if(key === "-") return;
@@ -284,16 +317,6 @@ window.render = () => {
                if(!obj[key][p1.name]) obj[key][p1.name] = {w:0, t:0};
                obj[key][p1.name].t++; if(win) obj[key][p1.name].w++;
             });
-
-            // H2H Table Logic
-            for (let j = idx + 1; j < m.players.length; j++) {
-                const p2 = m.players[j];
-                const pair = [p1.name, p2.name].sort();
-                const key = pair.join(" VS ");
-                if(!h2h[key]) h2h[key] = {};
-                h2h[key][pair[0]] = (h2h[key][pair[0]] || 0) + (p1.name === pair[0] ? p1.score : p2.score);
-                h2h[key][pair[1]] = (h2h[key][pair[1]] || 0) + (p1.name === pair[1] ? p1.score : p2.score);
-            }
           });
       }
     });
@@ -301,35 +324,24 @@ window.render = () => {
 
   // Render Table H2H
   Object.keys(h2h).sort().forEach(key => {
-      const names = key.split(" VS ");
-      if (selP !== 'all' && !names.includes(selP)) return;
-      const s1 = h2h[key][names[0]], s2 = h2h[key][names[1]];
+      const s1 = h2h[key][key.split(" VS ")[0]], s2 = h2h[key][key.split(" VS ")[1]];
       const tr = document.createElement('tr');
       tr.innerHTML = `<td style="font-size:10px; font-weight:700;">${key}</td>
-        <td><span class="tag ${s1>=s2? (s1==s2?'yellow':'blue'):'red'}">${names[0].split(' ')[0]}:${s1}</span>
-            <span class="tag ${s2>=s1? (s1==s2?'yellow':'blue'):'red'}">${names[1].split(' ')[0]}:${s2}</span></td>`;
+        <td><span class="tag ${s1>=s2?(s1==s2?'yellow':'blue'):'red'}">${key.split(" VS ")[0].split(' ')[0]}:${s1}</span>
+            <span class="tag ${s2>=s1?(s1==s2?'yellow':'blue'):'red'}">${key.split(" VS ")[1].split(' ')[0]}:${s2}</span></td>`;
       lbBody.appendChild(tr);
   });
 
-  updateChart(chartDataMap, selP);
+  renderMultiSelect(); // Refresh chips
+  updateChart(chartDataMap);
   renderStats('tableStats', tStats); 
   renderStats('locStats', lStats);
 };
 
-function updateChart(dataMap, filterP) {
+function updateChart(dataMap) {
     const ctx = document.getElementById('leaderboardChart').getContext('2d');
-    let labels = [], values = [];
-
-    // Jika filter player aktif, hanya tampilkan yang relevan
-    if (filterP !== 'all') {
-        labels = [filterP]; values = [dataMap[filterP] || 0];
-        // Tambahkan juga lawan-lawannya agar bisa dibanding
-        Object.keys(dataMap).forEach(name => {
-            if(name !== filterP) { labels.push(name); values.push(dataMap[name]); }
-        });
-    } else {
-        labels = Object.keys(dataMap); values = Object.values(dataMap);
-    }
+    const labels = Object.keys(dataMap).sort((a,b) => dataMap[b] - dataMap[a]);
+    const values = labels.map(l => dataMap[l]);
 
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
@@ -337,16 +349,16 @@ function updateChart(dataMap, filterP) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Total Points',
+                label: 'Points',
                 data: values,
-                backgroundColor: labels.map((l, i) => l === filterP ? '#0071e3' : '#d2d2d7'),
+                backgroundColor: '#0071e3',
                 borderRadius: 8
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
         }
     });
 }
@@ -370,7 +382,7 @@ function renderStats(id, stats) {
 
 window.toggleMainSection = (id) => {
     const el = document.getElementById(id);
-    el.style.display = (el.style.display === "none") ? "block" : "none";
+    el.classList.toggle('collapsed');
 };
 
 window.editMatch = (d, id) => {
@@ -390,6 +402,8 @@ window.toggleTheme = () => {
   localStorage.setItem('billiard-theme', next);
 };
 if(localStorage.getItem('billiard-theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+
+document.addEventListener('click', () => document.querySelectorAll('.ac-box').forEach(b => b.style.display = 'none'));
 
 addPlayerField(); addPlayerField();
 </script>
