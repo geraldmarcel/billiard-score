@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V8.4</title>
+<title>Billiard Pro Tracker V8.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
   :root {
     --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --sub: #86868b;
@@ -45,10 +47,8 @@
   .card-content { padding: 12px; }
   .collapsed { display: none !important; }
 
-  .bar-row { margin-bottom: 10px; }
-  .bar-label { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px; font-weight: 600; }
-  .bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-  .bar-fill { height: 100%; transition: width 0.8s ease; }
+  /* Chart Styles */
+  .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-bottom: 20px; height: 300px; position: relative; }
 
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; min-width: 500px; }
@@ -82,7 +82,6 @@
     <div class="row-single">
       <div class="input-group"><label>Match Date</label><input type="date" id="date"></div>
     </div>
-    
     <div class="row-double">
       <div class="input-group">
         <label>Location</label>
@@ -95,12 +94,10 @@
         <div id="res-table" class="ac-box"></div>
       </div>
     </div>
-    
     <div style="display:flex; justify-content:space-between; margin-bottom:5px; padding:0 2px;">
         <label>Players Name</label>
         <label style="width:50px; text-align:center;">Score</label>
     </div>
-    
     <div id="playerInputs"></div>
     <button class="add-player-btn" onclick="window.addPlayerField()">+ Add Player</button>
     <button class="save-btn" id="btnSave" onclick="saveMatch()">Save Match Result</button>
@@ -111,6 +108,11 @@
       <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
     </select>
     <select id="filterYear" onchange="render()"><option value="all">All Years</option></select>
+  </div>
+
+  <div class="section-title">📊 Leaderboard Chart</div>
+  <div class="chart-container">
+    <canvas id="leaderboardChart"></canvas>
   </div>
 
   <div class="section-title" onclick="toggleMainSection('leaderboardSection')">🏆 H2H Points Leaderboard <span>▼</span></div>
@@ -127,7 +129,7 @@
     </div>
   </div>
 
-  <div class="section-title" onclick="toggleMainSection('tableStats')">📊 Table Stats <span>▼</span></div>
+  <div class="section-title" onclick="toggleMainSection('tableStats')">🎱 Table Stats <span>▼</span></div>
   <div id="tableStats"></div>
 
   <div class="section-title" onclick="toggleMainSection('locStats')">📍 Location Stats <span>▼</span></div>
@@ -162,6 +164,7 @@ const db = getDatabase(app);
 const DB_PATH = 'billiard_final_v8';
 
 let editingId = null, allData = {}, masterP = [], masterL = [], masterT = [];
+let myChart = null; // Variable for Chart instance
 
 const dateIn = document.getElementById('date');
 dateIn.value = new Date().toISOString().split('T')[0];
@@ -178,26 +181,12 @@ function setupAC(input, list, data) {
       filtered.forEach(t => {
         const d = document.createElement('div');
         d.className = "ac-item"; d.innerText = t;
-        d.onclick = (e) => { 
-            e.stopPropagation();
-            input.value = t; 
-            list.style.display = "none"; 
-        };
+        d.onclick = (e) => { e.stopPropagation(); input.value = t; list.style.display = "none"; };
         list.appendChild(d);
       });
     } else { list.style.display = "none"; }
   };
 }
-
-function reAttachPlayerAC() {
-    document.querySelectorAll('.player-row').forEach(row => {
-        const inp = row.querySelector('.p-name');
-        const box = row.querySelector('.ac-box');
-        setupAC(inp, box, masterP);
-    });
-}
-
-document.addEventListener('click', () => document.querySelectorAll('.ac-box').forEach(b => b.style.display = 'none'));
 
 window.addPlayerField = (name = "", score = "") => {
     const container = document.getElementById('playerInputs');
@@ -208,9 +197,7 @@ window.addPlayerField = (name = "", score = "") => {
             <input type="text" class="p-name" placeholder="Name" value="${name}" autocomplete="off">
             <div class="ac-box"></div>
         </div>
-        <div class="p-score-wrap">
-            <input type="number" class="p-score" placeholder="0" value="${score}">
-        </div>
+        <div class="p-score-wrap"><input type="number" class="p-score" placeholder="0" value="${score}"></div>
     `;
     container.appendChild(div);
     setupAC(div.querySelector('.p-name'), div.querySelector('.ac-box'), masterP);
@@ -241,7 +228,6 @@ onValue(ref(db, DB_PATH), snap => {
 
   setupAC(document.getElementById('loc'), document.getElementById('res-loc'), masterL);
   setupAC(document.getElementById('table'), document.getElementById('res-table'), masterT);
-  reAttachPlayerAC();
   render();
 });
 
@@ -250,10 +236,8 @@ window.saveMatch = () => {
   let players = [];
   names.forEach((el, i) => { if(el.value.trim()){ players.push({name: el.value.trim(), score: parseInt(scores[i].value)||0}); }});
   if(players.length < 2) return alert("Min 2 players!");
-  
   const payload = { players, location: document.getElementById('loc').value.trim() || "-", table: document.getElementById('table').value.trim() || "-", timestamp: Date.now() };
   const target = editingId ? ref(db, `${DB_PATH}/${dateIn.value}/${editingId}`) : push(ref(db, `${DB_PATH}/${dateIn.value}`));
-  
   set(target, payload).then(() => {
     editingId = null; document.getElementById('btnSave').innerText = "Save Match Result";
     document.getElementById('playerInputs').innerHTML = ""; addPlayerField(); addPlayerField();
@@ -265,7 +249,8 @@ window.render = () => {
   const tbody = document.getElementById('historyBody');
   const lbBody = document.getElementById('leaderboardBody');
   tbody.innerHTML = ""; lbBody.innerHTML = "";
-  let tStats = {}, lStats = {}, h2h = {};
+  
+  let tStats = {}, lStats = {}, h2h = {}, chartDataMap = {};
   const selM = document.getElementById('filterMonth').value, selY = document.getElementById('filterYear').value, selP = document.getElementById('filterPlayer').value;
 
   Object.keys(allData).sort().reverse().forEach(d => {
@@ -276,6 +261,7 @@ window.render = () => {
           const scores = m.players.map(p => p.score);
           const high = Math.max(...scores), low = Math.min(...scores);
           
+          // History
           const tr = document.createElement('tr');
           let board = m.players.map(p => {
             let c = (p.score === high && high !== low) ? 'blue' : (p.score === low && high !== low ? 'red' : 'yellow');
@@ -286,7 +272,11 @@ window.render = () => {
                 <button class="action-btn delete" onclick="delMatch('${d}','${mid}')">✕</button></td>`;
           tbody.appendChild(tr);
 
+          // Logic for Stats & Chart
           m.players.forEach((p1, idx) => {
+            // Accumulate for Chart (All players in filtered matches)
+            chartDataMap[p1.name] = (chartDataMap[p1.name] || 0) + p1.score;
+
             const win = (p1.score === high && high > 0);
             [[m.table, tStats], [m.location, lStats]].forEach(([key, obj]) => {
                if(key === "-") return;
@@ -295,6 +285,7 @@ window.render = () => {
                obj[key][p1.name].t++; if(win) obj[key][p1.name].w++;
             });
 
+            // H2H Table Logic
             for (let j = idx + 1; j < m.players.length; j++) {
                 const p2 = m.players[j];
                 const pair = [p1.name, p2.name].sort();
@@ -308,6 +299,7 @@ window.render = () => {
     });
   });
 
+  // Render Table H2H
   Object.keys(h2h).sort().forEach(key => {
       const names = key.split(" VS ");
       if (selP !== 'all' && !names.includes(selP)) return;
@@ -319,8 +311,45 @@ window.render = () => {
       lbBody.appendChild(tr);
   });
 
-  renderStats('tableStats', tStats); renderStats('locStats', lStats);
+  updateChart(chartDataMap, selP);
+  renderStats('tableStats', tStats); 
+  renderStats('locStats', lStats);
 };
+
+function updateChart(dataMap, filterP) {
+    const ctx = document.getElementById('leaderboardChart').getContext('2d');
+    let labels = [], values = [];
+
+    // Jika filter player aktif, hanya tampilkan yang relevan
+    if (filterP !== 'all') {
+        labels = [filterP]; values = [dataMap[filterP] || 0];
+        // Tambahkan juga lawan-lawannya agar bisa dibanding
+        Object.keys(dataMap).forEach(name => {
+            if(name !== filterP) { labels.push(name); values.push(dataMap[name]); }
+        });
+    } else {
+        labels = Object.keys(dataMap); values = Object.values(dataMap);
+    }
+
+    if (myChart) myChart.destroy();
+    myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Points',
+                data: values,
+                backgroundColor: labels.map((l, i) => l === filterP ? '#0071e3' : '#d2d2d7'),
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+        }
+    });
+}
 
 function renderStats(id, stats) {
   const container = document.getElementById(id); container.innerHTML = "";
