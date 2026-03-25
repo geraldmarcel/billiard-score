@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Pro Tracker V9.1</title>
+<title>Billiard Pro Tracker V9.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -11,7 +11,7 @@
   :root {
     --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --sub: #86868b;
     --border: #d2d2d7; --primary: #0071e3; --accent: #f5f5f7;
-    --win: #0071e3; --lose: #ff3b30; --mid: #ffcc00;
+    --win: #0071e3; --lose: #ff3b30;
   }
   [data-theme="dark"] {
     --bg: #000000; --card: #1c1c1e; --text: #f5f5f7; --sub: #a1a1a6;
@@ -25,22 +25,31 @@
   .back-btn { text-decoration: none; color: var(--sub); font-size: 13px; font-weight: 600; }
   .mode-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; }
 
-  .input-card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); position: relative; z-index: 100; }
-  .input-group { display: flex; flex-direction: column; flex: 1; position: relative; margin-bottom: 10px; }
+  /* Input & Filter Card */
+  .card { background: var(--card); padding: 20px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); position: relative; }
+  .input-group { display: flex; flex-direction: column; flex: 1; position: relative; margin-bottom: 12px; }
   label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; letter-spacing: 0.5px; }
   input, select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; outline: none; font-size: 14px; width: 100%; box-sizing: border-box; }
+  
+  /* Player Row Fix */
+  .player-header { display: flex; gap: 10px; margin-bottom: 5px; }
+  .player-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+  .p-name-wrap { flex: 1; position: relative; }
+  .p-score-wrap { width: 70px; }
+  .p-score { text-align: center; font-weight: 800; color: var(--primary); }
 
+  /* Autocomplete */
   .ac-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; z-index: 9999; display: none; max-height: 150px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
   .ac-item { padding: 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); }
   .ac-item:hover { background: var(--primary); color: white; }
 
-  .multi-select-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 700; background: var(--accent); color: var(--sub); }
+  /* Dashboard Filters (Non-Collapsible) */
+  .multi-select-box { background: var(--accent); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; font-weight: 700; background: var(--card); color: var(--sub); }
   .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .filter-bar { display: flex; gap: 8px; margin-top: 10px; }
 
-  .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; }
-  .filter-bar select { flex: 1; background: var(--card); border: 1px solid var(--border); font-weight: 600; font-size: 12px; }
-
+  /* Elements */
   .chart-container { background: var(--card); border-radius: 18px; border: 1px solid var(--border); padding: 15px; margin-top: 15px; height: 320px; }
   .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; min-width: 450px; }
@@ -50,7 +59,7 @@
   .tag { padding: 4px 8px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; margin: 1px; display: inline-block; }
   .blue { background: var(--win); } .red { background: var(--lose); }
 
-  .save-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .save-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 15px; }
   .add-player-btn { background: none; border: 1px dashed var(--sub); color: var(--sub); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; margin: 10px 0; font-size: 12px; }
   
   .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
@@ -58,7 +67,7 @@
   .delete { background: #ffebeb; color: #ff3b30; }
 
   .collapsed { display: none !important; }
-  .section-title { font-size: 15px; font-weight: 800; margin: 25px 0 12px; display: flex; justify-content: space-between; cursor: pointer; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .section-title { font-size: 14px; font-weight: 800; margin: 25px 0 12px; display: flex; justify-content: space-between; cursor: pointer; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); }
 
   .bar-row { margin-bottom: 12px; }
   .bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; font-weight: 700; }
@@ -74,23 +83,29 @@
     <button class="mode-btn" onclick="toggleTheme()">🌓 Theme</button>
   </div>
 
-  <div class="input-card">
+  <div class="card">
+    <div style="font-weight: 800; font-size: 15px; margin-bottom: 15px;">📝 New Match Record</div>
     <div class="input-group"><label>Match Date</label><input type="date" id="date"></div>
     <div style="display:flex; gap:10px;">
-      <div class="input-group"><label>Location</label><input type="text" id="loc" autocomplete="off"><div id="res-loc" class="ac-box"></div></div>
-      <div class="input-group"><label>Table</label><input type="text" id="table" autocomplete="off"><div id="res-table" class="ac-box"></div></div>
+      <div class="input-group"><label>Location</label><input type="text" id="loc" placeholder="Club..." autocomplete="off"><div id="res-loc" class="ac-box"></div></div>
+      <div class="input-group"><label>Table</label><input type="text" id="table" placeholder="No..." autocomplete="off"><div id="res-table" class="ac-box"></div></div>
+    </div>
+    
+    <div class="player-header">
+      <label style="flex:1;">Player Name</label>
+      <label style="width:70px; text-align:center;">Score</label>
     </div>
     <div id="playerInputs"></div>
     <button class="add-player-btn" onclick="window.addPlayerField()">+ Add Player</button>
     <button class="save-btn" id="btnSave" onclick="saveMatch()">Save Match Result</button>
   </div>
 
-  <div class="section-title" onclick="toggleMainSection('analysisPanel')">🔎 Dashboard Filter <span>▼</span></div>
-  <div id="analysisPanel">
-    <label style="font-size: 9px; font-weight: 800; color: var(--sub);">PLAYERS FILTER:</label>
+  <div class="card">
+    <div style="font-weight: 800; font-size: 15px; margin-bottom: 10px;">🔎 Dashboard Analysis Filter</div>
+    <label>Players Filter:</label>
     <div id="multiPlayerFilter" class="multi-select-box"></div>
     
-    <label style="font-size: 9px; font-weight: 800; color: var(--sub);">TIME PERIOD:</label>
+    <label>Time Period Filter:</label>
     <div class="filter-bar">
       <select id="filterMonth" onchange="render()"><option value="all">All Months</option>
         <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
@@ -113,7 +128,7 @@
   <div class="section-title" onclick="toggleMainSection('locStats')">📍 Venue Stats <span>▼</span></div>
   <div id="locStats" class="collapsed" style="padding:15px; background:var(--card); border: 1px solid var(--border); border-radius:12px;"></div>
 
-  <div class="section-title">📜 Match History</div>
+  <div style="font-size: 14px; font-weight: 800; margin: 25px 0 12px; color: var(--sub);">📜 Match History</div>
   <div class="table-wrapper">
     <table><thead><tr><th>Date</th><th>Result</th><th>Loc</th><th>Table</th><th>Act</th></tr></thead><tbody id="historyBody"></tbody></table>
   </div>
@@ -160,8 +175,8 @@ function initAC(inpId, boxId, list) {
 window.addPlayerField = (n="", s="") => {
     const cont = document.getElementById('playerInputs');
     const div = document.createElement('div'); div.className = 'player-row';
-    div.innerHTML = `<div class="p-name-wrap" style="flex:1; position:relative;"><input type="text" class="p-name" placeholder="Name" value="${n}" autocomplete="off"><div class="ac-box"></div></div>
-        <div style="width:60px;"><input type="number" class="p-score" value="${s}" placeholder="0" style="text-align:center; font-weight:800;"></div>`;
+    div.innerHTML = `<div class="p-name-wrap"><input type="text" class="p-name" placeholder="Name..." value="${n}" autocomplete="off"><div class="ac-box"></div></div>
+        <div class="p-score-wrap"><input type="number" class="p-score" value="${s}" placeholder="0"></div>`;
     cont.appendChild(div);
     const inp = div.querySelector('.p-name'), box = div.querySelector('.ac-box');
     inp.oninput = () => {
@@ -187,12 +202,10 @@ onValue(ref(db, DB_PATH), snap => {
         });
     });
     masterP = [...pSet].sort(); masterL = [...lSet].sort(); masterT = [...tSet].sort();
-    
     const fy = document.getElementById('filterYear'); const curY = fy.value;
     fy.innerHTML = '<option value="all">All Years</option>';
     [...ySet].sort().reverse().forEach(y => fy.innerHTML += `<option value="${y}">${y}</option>`);
     if(curY) fy.value = curY;
-
     initAC('loc', 'res-loc', masterL); initAC('table', 'res-table', masterT);
     render();
 });
@@ -222,21 +235,15 @@ window.render = () => {
     Object.keys(allData).sort().reverse().forEach(date => {
         const [y, m_str] = date.split('-');
         const isTimeMatch = (fM === 'all' || m_str === fM) && (fY === 'all' || y === fY);
-        
         Object.keys(allData[date]).forEach(mid => {
             const m = allData[date][mid], pNames = m.players.map(p => p.name), hi = Math.max(...m.players.map(p => p.score));
-            
-            // Only proceed if match matches time filter
             if(isTimeMatch) {
-                // History Table
                 const tr = document.createElement('tr');
                 let res = m.players.map(p => `<span class="tag ${p.score==hi?'blue':'red'}">${p.name.split(' ')[0]}:${p.score}</span>`).join("");
                 tr.innerHTML = `<td>${date.slice(5)}</td><td>${res}</td><td>${m.location}</td><td>${m.table}</td>
                     <td><button class="action-btn edit" onclick="window.editMatch('${date}','${mid}')">✎</button>
                     <button class="action-btn delete" onclick="window.delMatch('${date}','${mid}')">✕</button></td>`;
                 hBody.appendChild(tr);
-
-                // Stats calculation (within filtered time)
                 m.players.forEach(p => {
                     const win = (p.score === hi && hi > 0);
                     [[m.table, tStats], [m.location, lStats]].forEach(([key, obj]) => {
@@ -245,8 +252,6 @@ window.render = () => {
                         obj[key][p.name].t++; if(win) obj[key][p.name].w++;
                     });
                 });
-
-                // H2H & Chart logic (within filtered time AND filtered players)
                 let isPlayerRelevant = selectedPlayers.length === 0 || selectedPlayers.every(n => pNames.includes(n));
                 if(isPlayerRelevant) {
                     m.players.forEach((p1, i) => {
@@ -264,12 +269,10 @@ window.render = () => {
             }
         });
     });
-
     Object.keys(h2h).sort().forEach(k => {
         const n = k.split(" VS "), s1 = h2h[k][n[0]] || 0, s2 = h2h[k][n[1]] || 0;
         lBody.innerHTML += `<tr><td style="font-weight:700;">${k}</td><td><span class="tag ${s1>=s2?'blue':'red'}">${n[0]}:${s1}</span> <span class="tag ${s2>=s1?'blue':'red'}">${n[1]}:${s2}</span></td></tr>`;
     });
-
     updateChart(chartData);
     renderStats('tableStats', tStats); renderStats('locStats', lStats);
 };
@@ -307,7 +310,7 @@ window.editMatch = (d, mid) => {
     m.players.forEach(p => window.addPlayerField(p.name, p.score));
     document.getElementById('btnSave').innerText = "Update Match"; window.scrollTo({top: 0, behavior: 'smooth'});
 };
-window.delMatch = (d, mid) => { if(confirm("Delete match?")) remove(ref(db, `${DB_PATH}/${d}/${mid}`)); };
+window.delMatch = (d, mid) => { if(confirm("Delete?")) remove(ref(db, `${DB_PATH}/${d}/${mid}`)); };
 window.toggleTheme = () => {
     const n = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.body.setAttribute('data-theme', n); localStorage.setItem('billiard-theme', n);
