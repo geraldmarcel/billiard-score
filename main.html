@@ -67,6 +67,7 @@
   
   .win-tag { background: rgba(0, 113, 227, 0.1); color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: 700; }
   .lose-tag { background: rgba(142, 142, 147, 0.1); color: var(--sub); padding: 4px 8px; border-radius: 6px; }
+  .draw-tag { background: rgba(255, 204, 0, 0.1); color: #b28f00; padding: 4px 8px; border-radius: 6px; font-weight: 700; }
   
   .action-btn { border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; margin: 0 2px; }
   .edit { background: #e1f0ff; color: var(--primary); }
@@ -320,36 +321,48 @@ function render() {
 
       if(!locMap[lName]) locMap[lName] = {total:0, gW:0, aW:0};
       locMap[lName].total++;
-      if(g.gerald > g.angie) locMap[lName].gW++; else if(g.angie > g.gerald) locMap[lName].aW++;
       if(!tableMap[tName]) tableMap[tName] = {total:0, gW:0, aW:0};
       tableMap[tName].total++;
-      if(g.gerald > g.angie) tableMap[tName].gW++; else if(g.angie > g.gerald) tableMap[tName].aW++;
+
+      // PERBAIKAN LOGIKA SERI (Optimized for Draw)
+      let gC, aC;
+      if (g.gerald > g.angie) {
+        s.gW++; locMap[lName].gW++; tableMap[tName].gW++;
+        gC = '<span class="win-tag">' + g.gerald + '</span>';
+        aC = '<span class="lose-tag">' + g.angie + '</span>';
+      } else if (g.angie > g.gerald) {
+        s.aW++; locMap[lName].aW++; tableMap[tName].aW++;
+        gC = '<span class="lose-tag">' + g.gerald + '</span>';
+        aC = '<span class="win-tag">' + g.angie + '</span>';
+      } else {
+        // Logika Draw: masing-masing dapat 0.5 poin kemenangan
+        s.gW += 0.5; s.aW += 0.5;
+        locMap[lName].gW += 0.5; locMap[lName].aW += 0.5;
+        tableMap[tName].gW += 0.5; tableMap[tName].aW += 0.5;
+        gC = '<span class="draw-tag">' + g.gerald + '</span>';
+        aC = '<span class="draw-tag">' + g.angie + '</span>';
+      }
 
       const tr = document.createElement('tr');
-      const gC = g.gerald > g.angie ? '<span class="win-tag">' + g.gerald + '</span>' : '<span class="lose-tag">' + g.gerald + '</span>';
-      const aC = g.angie > g.gerald ? '<span class="win-tag">' + g.angie + '</span>' : '<span class="lose-tag">' + g.angie + '</span>';
-      
       tr.innerHTML = `<td>${date}</td><td>${gC}</td><td>${aC}</td><td>${lName}</td><td>${tName}</td>
         <td style="color:var(--money); font-weight:600">Rp ${price.toLocaleString()}</td>
         <td><button class="action-btn edit" onclick="editS('${date}','${id}')">Edit</button><button class="action-btn delete" onclick="deleteScore('${date}','${id}')">Del</button></td>`;
       histEl.appendChild(tr);
       
       s.gP += g.gerald; s.aP += g.angie; s.games++; s.totalCost += price;
-      if(g.gerald > g.angie) s.gW++; else if(g.angie > g.gerald) s.aW++;
     });
   });
 
-  // Update Points Card & Winrate by points
   document.getElementById('stat-p-g').innerText = s.gP;
   document.getElementById('stat-p-a').innerText = s.aP;
   const totalPoints = s.gP + s.aP;
   document.getElementById('wr-p-g').innerText = totalPoints > 0 ? Math.round((s.gP / totalPoints) * 100) + "%" : "0%";
   document.getElementById('wr-p-a').innerText = totalPoints > 0 ? Math.round((s.aP / totalPoints) * 100) + "%" : "0%";
 
-  // Update Games Card & Win Counts
   document.getElementById('stat-games').innerText = s.games;
-  document.getElementById('win-count-g').innerText = s.gW;
-  document.getElementById('win-count-a').innerText = s.aW;
+  // Win Count dibulatkan ke bawah agar tampil lebih bersih jika ada .5
+  document.getElementById('win-count-g').innerText = Math.floor(s.gW);
+  document.getElementById('win-count-a').innerText = Math.floor(s.aW);
 
   document.getElementById('stat-spending').innerText = "Rp " + s.totalCost.toLocaleString();
   
