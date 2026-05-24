@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Scoreboard & Timer</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 30px;
+        }
+
+        /* Form Setup */
+        .setup-box {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-start {
+            background-color: var(--primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-start:hover { background-color: #1d4ed8; }
+
+        .btn-reset {
+            background-color: var(--danger);
+            color: white;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .btn-reset:hover { background-color: #b91c1c; }
+
+        /* Dashboard & Cards */
+        .race-info {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            background: #e2e8f0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .player-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            border-top: 5px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .player-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .player-location {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+
+        .score-display {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 10px 0;
+            color: var(--text);
+        }
+
+        .timer-display {
+            font-family: monospace;
+            font-size: 1.5rem;
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 5px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .stats-box {
+            font-size: 0.85rem;
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 6px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn-score {
+            flex: 1;
+            background-color: var(--success);
+            color: white;
+        }
+        .btn-score:hover { background-color: #15803d; }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .winner {
+            border: 5px solid #eab308 !important;
+            background: #fef9c3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Race Scoreboard</h1>
+
+    <!-- 1. SETUP FORM -->
+    <div id="setup-section" class="setup-box">
+        <div class="input-group">
+            <label for="input-name">Nama Pemain (Pisahkan dengan koma jika lebih dari 1)</label>
+            <input type="text" id="input-name" placeholder="Contoh: Alfon, Dean, Cp" required>
+        </div>
+        <div class="input-group">
+            <label for="input-location">Lokasi Pertandingan</label>
+            <input type="text" id="input-location" placeholder="Contoh: Jakarta" default="Billiard Room">
+        </div>
+        <div class="input-group">
+            <label for="input-race">Race To</label>
+            <input type="number" id="input-race" placeholder="Contoh: 5" min="1" required>
+        </div>
+        <button class="btn-start" onclick="initiateRace()">Mulai Pertandingan</button>
+    </div>
+
+    <!-- 2. GAMEBOARD SECTION -->
+    <div id="gameboard-section" class="hidden">
+        <div id="race-meta" class="race-info"></div>
+        
+        <div id="cards-container" class="cards-container">
+            <!-- Kartu pemain akan di-generate otomatis di sini melalui JS -->
+        </div>
+
+        <button class="btn-reset" onclick="resetGame()">Reset Semua Data</button>
+    </div>
+</div>
+
+<script>
+    let playersData = [];
+    let raceTo = 0;
+    let locationName = "";
+
+    function initiateRace() {
+        const nameInput = document.getElementById('input-name').value.trim();
+        locationName = document.getElementById('input-location').value.trim() || "Local Arena";
+        raceTo = parseInt(document.getElementById('input-race').value);
+
+        if (!nameInput || !raceTo) {
+            alert("Harap isi Nama Pemain dan Target Race To!");
+            return;
+        }
+
+        // Memisahkan nama berdasarkan koma jika user menginput banyak pemain sekaligus
+        const namesArray = nameInput.split(',').map(name => name.trim()).filter(name => name.length > 0);
+
+        // Setup Data Pemain
+        playersData = namesArray.map((name, index) => ({
+            id: index,
+            name: name,
+            score: 0,
+            startTime: null,
+            elapsedTime: 0, // dalam milidetik
+            timerInterval: null,
+            totalTimeForAvg: 0, // total akumulasi waktu saat poin bertambah
+            pointsScored: 0
+        }));
+
+        // Tampilkan info Race To dan Lokasi
+        document.getElementById('race-meta').innerText = `📍 ${locationName} | 🏁 Race To: ${raceTo}`;
+
+        // Sembunyikan form setup, tampilkan gameboard
+        document.getElementById('setup-section').classList.add('hidden');
+        document.getElementById('gameboard-section').classList.remove('hidden');
+
+        renderCards();
+    }
+
+    function renderCards() {
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+
+        playersData.forEach(player => {
+            const card = document.createElement('div');
+            card.className = `player-card`;
+            card.id = `card-${player.id}`;
+
+            card.innerHTML = `
+                <div class="player-name">${player.name}</div>
+                <div class="player-location">📍 ${locationName}</div>
+                <div class="timer-display" id="timer-${player.id}">00:00.00</div>
+                <div class="score-display" id="score-${player.id}">0</div>
+                <div class="stats-box">
+                    Avg Time/Poin: <span id="avg-${player.id}">-</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-score" id="btn-${player.id}" onclick="addPoint(${player.id})">+1 Poin</button>
+                </div>
+            `;
+            container.appendChild(card);
+            
+            // Langsung nyalakan stopwatch mandiri begitu kartu muncul
+            startPlayerTimer(player.id);
+        });
+    }
+
+    // Fungsi Stopwatch
+    function startPlayerTimer(id) {
+        const player = playersData[id];
+        player.startTime = Date.now() - player.elapsedTime;
+
+        player.timerInterval = setInterval(() => {
+            player.elapsedTime = Date.now() - player.startTime;
+            document.getElementById(`timer-${id}`).innerText = formatTime(player.elapsedTime);
+        }, 10); // Update setiap 10ms untuk presisi milidetik
+    }
+
+    function formatTime(ms) {
+        let minutes = Math.floor(ms / 60000);
+        let seconds = Math.floor((ms % 60000) / 1000);
+        let centiseconds = Math.floor((ms % 1000) / 10);
+
+        return (
+            (minutes < 10 ? "0" : "") + minutes + ":" +
+            (seconds < 10 ? "0" : "") + seconds + "." +
+            (centiseconds < 10 ? "0" : "") + centiseconds
+        );
+    }
+
+    function formatAvgTime(ms) {
+        let seconds = (ms / 1000).toFixed(2);
+        return `${seconds} detik`;
+    }
+
+    // Fungsi Tambah Skor & Hitung Rata-Rata Waktu per Game
+    function addPoint(id) {
+        const player = playersData[id];
+        player.score++;
+        player.pointsScored++;
+        
+        // Update tampilan skor
+        document.getElementById(`score-${id}`).innerText = player.score;
+
+        // Hitung rata-rata waktu per poin
+        // Menggunakan waktu berjalan saat tombol ditekan dikurangi akumulasi poin sebelumnya
+        player.totalTimeForAvg = player.elapsedTime; 
+        let averageTime = player.totalTimeForAvg / player.pointsScored;
+        
+        document.getElementById(`avg-${id}`).innerText = formatAvgTime(averageTime);
+
+        // Cek jika pemain mencapai target Race To
+        if (player.score >= raceTo) {
+            endGame(id);
+        }
+    }
+
+    // Ketika salah satu pemain menang
+    function endGame(winnerId) {
+        // Hentikan semua stopwatch
+        playersData.forEach(player => {
+            clearInterval(player.timerInterval);
+            document.getElementById(`btn-${player.id}`).disabled = true;
+        });
+
+        // Tandai pemenang
+        document.getElementById(`card-${winnerId}`).classList.add('winner');
+        alert(`Selamat! ${playersData[winnerId].name} memenangkan pertandingan (Race to ${raceTo})!`);
+    }
+
+    // Fungsi Reset Total
+    function resetGame() {
+        if(confirm("Apakah Anda yakin ingin mereset permainan? Semua data akan hilang.")) {
+            // Clear semua interval stopwatch yang aktif
+            playersData.forEach(player => {
+                if(player.timerInterval) clearInterval(player.timerInterval);
+            });
+
+            // Reset variable
+            playersData = [];
+            raceTo = 0;
+
+            // Reset Form Input Visual
+            document.getElementById('input-name').value = '';
+            document.getElementById('input-race').value = '';
+
+            // Tukar tampilan ke layar utama
+            document.getElementById('gameboard-section').classList.add('hidden');
+            document.getElementById('setup-section').classList.remove('hidden');
+        }
+    }
+</script>
+
+</body>
+</html>
