@@ -55,6 +55,8 @@
   .bar-bg { height: 8px; background: var(--border); border-radius: 4px; display: flex; overflow: hidden; }
   .bar-g { background: var(--gerald); height: 100%; transition: 0.5s; }
   .bar-a { background: var(--angie); height: 100%; transition: 0.5s; }
+  /* Indikator visual warna draw di bar grafik */
+  .bar-d { background: var(--border); height: 100%; transition: 0.5s; filter: brightness(0.9); }
 
   .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; background: var(--card); padding: 12px; border-radius: 14px; border: 1px solid var(--border); align-items: center; overflow-x: auto; }
   .filter-bar label { margin: 0; white-space: nowrap; }
@@ -155,7 +157,8 @@
       <div class="stat-value" id="stat-games">0</div>
       <div style="font-size:10px; font-weight:700; color:var(--sub); margin-top:5px;">
         Win: <span style="color:var(--gerald)">G:<span id="win-count-g">0</span></span> | 
-        <span style="color:var(--angie)">A:<span id="win-count-a">0</span></span>
+        <span style="color:var(--angie)">A:<span id="win-count-a">0</span></span> |
+        <span style="color:var(--sub)">D:<span id="draw-count">0</span></span>
       </div>
     </div>
 
@@ -305,7 +308,8 @@ function resetForm() { editingId = null; gIn.value = 0; aIn.value = 0; locIn.val
 
 function render() {
   histEl.innerHTML = "";
-  let s = { gP:0, aP:0, games:0, gW:0, aW:0, totalCost:0 };
+  // Ditambahkan variabel dW untuk tracking total pure draw secara global
+  let s = { gP:0, aP:0, games:0, gW:0, aW:0, dW:0, totalCost:0 };
   let locMap = {}, tableMap = {};
   const dates = Object.keys(allData).sort().reverse();
 
@@ -319,12 +323,12 @@ function render() {
       const tName = g.tableSeriesName || "-";
       const price = g.price || 0;
 
-      if(!locMap[lName]) locMap[lName] = {total:0, gW:0, aW:0};
+      // Inisialisasi map dengan tracking counter dW (Draw)
+      if(!locMap[lName]) locMap[lName] = {total:0, gW:0, aW:0, dW:0};
       locMap[lName].total++;
-      if(!tableMap[tName]) tableMap[tName] = {total:0, gW:0, aW:0};
+      if(!tableMap[tName]) tableMap[tName] = {total:0, gW:0, aW:0, dW:0};
       tableMap[tName].total++;
 
-      // PERBAIKAN LOGIKA SERI (Optimized for Draw)
       let gC, aC;
       if (g.gerald > g.angie) {
         s.gW++; locMap[lName].gW++; tableMap[tName].gW++;
@@ -335,10 +339,8 @@ function render() {
         gC = '<span class="lose-tag">' + g.gerald + '</span>';
         aC = '<span class="win-tag">' + g.angie + '</span>';
       } else {
-        // Logika Draw: masing-masing dapat 0.5 poin kemenangan
-        s.gW += 0.5; s.aW += 0.5;
-        locMap[lName].gW += 0.5; locMap[lName].aW += 0.5;
-        tableMap[tName].gW += 0.5; tableMap[tName].aW += 0.5;
+        // Pemisahan counter murni: draw dicatat terpisah, tidak digabung ke Win Rate persen individu secara bias
+        s.dW++; locMap[lName].dW++; tableMap[tName].dW++;
         gC = '<span class="draw-tag">' + g.gerald + '</span>';
         aC = '<span class="draw-tag">' + g.angie + '</span>';
       }
@@ -353,16 +355,18 @@ function render() {
     });
   });
 
+  // Tampilan Akumulasi Poin Tetap (Sesuai Permintaan)
   document.getElementById('stat-p-g').innerText = s.gP;
   document.getElementById('stat-p-a').innerText = s.aP;
   const totalPoints = s.gP + s.aP;
   document.getElementById('wr-p-g').innerText = totalPoints > 0 ? Math.round((s.gP / totalPoints) * 100) + "%" : "0%";
   document.getElementById('wr-p-a').innerText = totalPoints > 0 ? Math.round((s.aP / totalPoints) * 100) + "%" : "0%";
 
+  // Menampilkan angka Win murni (tanpa .5) dan counter Draw (D) di bawah card Games
   document.getElementById('stat-games').innerText = s.games;
-  // Win Count dibulatkan ke bawah agar tampil lebih bersih jika ada .5
-  document.getElementById('win-count-g').innerText = Math.floor(s.gW);
-  document.getElementById('win-count-a').innerText = Math.floor(s.aW);
+  document.getElementById('win-count-g').innerText = s.gW;
+  document.getElementById('win-count-a').innerText = s.aW;
+  document.getElementById('draw-count').innerText = s.dW;
 
   document.getElementById('stat-spending').innerText = "Rp " + s.totalCost.toLocaleString();
   
@@ -381,15 +385,18 @@ function renderWinRateBars(elementId, map) {
     const d = map[key];
     const gP = Math.round((d.gW / d.total) * 100);
     const aP = Math.round((d.aW / d.total) * 100);
+    const dP = Math.round((d.dW / d.total) * 100); // Indikator persen draw di lokasi/meja
+    
     const item = document.createElement('div');
     item.className = 'insight-item';
     item.innerHTML = `
       <div class="insight-header">
         <span>${key} <small style="font-weight:400; color:var(--sub)">(${d.total} matches)</small></span>
-        <span>G: ${gP}% | A: ${aP}%</span>
+        <span>G: ${gP}% ${dP > 0 ? `| D: ${dP}%` : ''} | A: ${aP}%</span>
       </div>
       <div class="bar-bg">
         <div class="bar-g" style="width:${gP}%"></div>
+        <div class="bar-d" style="width:${dP}%"></div>
         <div class="bar-a" style="width:${aP}%"></div>
       </div>`;
     el.appendChild(item);
