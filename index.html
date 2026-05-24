@@ -104,6 +104,13 @@
     <p>Match record for everyone.</p>
     <button class="go-btn">Explore Stats</button>
   </div>
+
+  <div class="card" onclick="goToLiveRace()">
+    <div class="icon-circle">⚡</div>
+    <h2>Live Race Scoreboard</h2>
+    <p>Real-time game tracking with stopwatch and average time analysis.</p>
+    <button class="go-btn">Start Live Race</button>
+  </div>
 </div>
 
 <footer>
@@ -127,6 +134,8 @@ loadTheme();
 
 function goToResultMatch(){ window.location.href = "main.html"; }
 function goToPerGame(){ window.location.href = "review.html"; }
+// Fungsi navigasi baru ke file live.html
+function goToLiveRace(){ window.location.href = "live.html"; }
 </script>
 
 </body>
