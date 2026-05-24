@@ -212,15 +212,6 @@
             border: 1px solid var(--border);
         }
 
-        /* Wrapper khusus area screenshot agar rapi saat diconvert jadi gambar */
-        .screenshot-area {
-            background: var(--bg);
-            padding: 15px;
-            border-radius: 24px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
         .cards-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -382,11 +373,16 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+
+        /* Menyembunyikan tombol aksi khusus saat screenshot sedang diproses */
+        .hide-on-screenshot button, .hide-on-screenshot .btn-nav {
+            visibility: hidden !important;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="full-page-zone">
     <div class="header-area">
         <h1>Live Scoreboard</h1>
         <button class="btn-nav" onclick="goToIndex()">⬅ Back to Menu</button>
@@ -419,11 +415,8 @@
     <!-- 2. GAMEBOARD SECTION -->
     <div id="gameboard-section" class="hidden">
         
-        <!-- Bungkus area ini untuk dironntgen menjadi screenshot -->
-        <div id="capture-zone" class="screenshot-area">
-            <div id="race-meta" class="race-info"></div>
-            <div id="cards-container" class="cards-container"></div>
-        </div>
+        <div id="race-meta" class="race-info"></div>
+        <div id="cards-container" class="cards-container"></div>
 
         <!-- Global Control Panel -->
         <div class="global-control-panel">
@@ -435,8 +428,7 @@
                 <div class="stats-value" id="global-avg-value">-</div>
             </div>
 
-            <div class="action-buttons">
-                <!-- Tombol share manual (opsional, muncul di akhir) -->
+            <div class="action-buttons" id="control-buttons">
                 <button id="btn-share-node" class="btn-share hidden" onclick="generateScreenshotAndShare()">📤 Share Result</button>
                 <button class="btn-reset" onclick="resetGame()">Reset Match Data</button>
             </div>
@@ -450,7 +442,7 @@
     let raceTo = 0;
     let locationName = "";
     let totalMatchPoints = 0;
-    let blobGambarGlobal = null; // Menyimpan data file gambar jepretan
+    let blobGambarGlobal = null;
     
     let matchStartTime = null;
     let matchElapsedTime = 0;
@@ -589,47 +581,54 @@
         
         document.getElementById('btn-share-node').classList.remove('hidden');
 
-        // Beri jeda 800ms agar animasi CSS render kartu selesai terpasang sempurna baru jepret otomatis
+        // Delay sedikit agar animasi kelas WINNER selesai dirender di layar sebelum difoto
         setTimeout(() => {
             generateScreenshotAndShare(true); 
         }, 800);
     }
 
-    // ================= FITUR AUTO SCREENSHOT & SHARE SHEET =================
+    // ================= FITUR FULL PAGE AUTO SCREENSHOT & SHARE =================
     function generateScreenshotAndShare(isAuto = false) {
-        const target = document.getElementById('capture-zone');
+        const target = document.getElementById('full-page-zone');
         
-        // Render area papan skor menjadi Canvas Gambar
+        // Sembunyikan tombol fungsional sementara (biar hasil fotonya bersih tanpa button)
+        target.classList.add('hide-on-screenshot');
+        
         html2canvas(target, {
             backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg'),
-            scale: 2 // Skala 2x agar gambar tajam / HD saat dikirim
+            scale: 2, // Skala HD kualitias tajam
+            logging: false,
+            useCORS: true
         }).then(canvas => {
+            // Tampilkan kembali tombol di web setelah jepretan selesai
+            target.classList.remove('hide-on-screenshot');
+
             canvas.toBlob(blob => {
                 blobGambarGlobal = blob;
-                const fileGambar = new File([blob], "billiard-match-result.png", { type: "image/png" });
+                const fileGambar = new File([blob], "billiard-match-full-result.png", { type: "image/png" });
 
-                // Cek apakah browser mendukung Web Share API untuk kirim file gambar
                 if (navigator.canShare && navigator.canShare({ files: [fileGambar] })) {
                     navigator.share({
                         files: [fileGambar],
-                        title: 'Billiard Live Scoreboard Result',
-                        text: `Match completed! Total Time: ${document.getElementById('global-timer').innerText}.`
+                        title: 'Billiard Match Result',
+                        text: `Match Overview at ${locationName}. Target Race: ${raceTo}.`
                     })
-                    .then(() => console.log('Successfully Shared!'))
+                    .then(() => console.log('Successfully Shared Full Page!'))
                     .catch((error) => console.log('Sharing cancelled/failed', error));
                 } else {
-                    // Fallback jika dibuka di browser jadul / PC yang tidak dukung share gambar langsung
                     if (!isAuto) {
-                        // Jika user klik tombol share manual, otomatis download gambarnya sebagai ganti
                         const link = document.createElement('a');
-                        link.download = 'billiard-result.png';
+                        link.download = 'billiard-full-result.png';
                         link.href = URL.createObjectURL(blob);
                         link.click();
                     } else {
-                        alert("Game Over! Screenshot generated. You can use the 'Share Result' button to download it.");
+                        alert("Game Over! Full page screenshot captured. Click 'Share Result' to download the file.");
                     }
                 }
             }, 'image/png');
+        }).catch(err => {
+            target.classList.remove('hide-on-screenshot');
+            console.error("Screenshot failed:", err);
         });
     }
 
