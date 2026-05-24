@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -76,7 +76,7 @@
         }
         .btn-nav:hover { background: var(--accent); }
 
-        /* Form Setup Box */
+        /* Setup Box */
         .setup-box {
             background: var(--card);
             padding: 30px;
@@ -152,13 +152,11 @@
             color: white;
             padding: 12px 24px;
             border-radius: 20px;
-            display: block;
-            margin: 30px auto;
             font-size: 14px;
         }
         .btn-reset:hover { opacity: 0.9; }
 
-        /* Player List Tags */
+        /* Player Tags */
         .player-list-preview {
             display: flex;
             flex-wrap: wrap;
@@ -168,6 +166,7 @@
             padding: 10px;
             background: var(--accent);
             border-radius: 12px;
+            align-items: center;
         }
 
         .player-tag {
@@ -188,7 +187,7 @@
             font-weight: 700;
         }
 
-        /* Dashboard Match */
+        /* Match Dashboard */
         .race-info {
             text-align: center;
             font-size: 16px;
@@ -204,6 +203,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 24px;
+            margin-bottom: 40px;
         }
 
         .player-card {
@@ -219,7 +219,7 @@
         }
 
         .player-name {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 700;
             margin-bottom: 4px;
         }
@@ -230,20 +230,8 @@
             margin-bottom: 20px;
         }
 
-        .timer-display {
-            font-family: monospace;
-            font-size: 24px;
-            font-weight: 700;
-            background: #000000;
-            color: #30d158;
-            padding: 8px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-        }
-
         .score-display {
-            font-size: 72px;
+            font-size: 84px;
             font-weight: 800;
             margin: 10px 0;
             line-height: 1;
@@ -273,6 +261,39 @@
         }
         .btn-score:hover { opacity: 0.9; }
 
+        /* Global Control Section at the Bottom */
+        .global-control-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
+        }
+
+        .global-timer-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--sub);
+        }
+
+        .global-timer-display {
+            font-family: monospace;
+            font-size: 42px;
+            font-weight: 800;
+            background: #000000;
+            color: #30d158;
+            padding: 10px 30px;
+            border-radius: 16px;
+            letter-spacing: 1px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+
         .hidden { display: none !important; }
         
         .winner {
@@ -288,90 +309,104 @@
 <div class="container">
     <div class="header-area">
         <h1>Live Scoreboard</h1>
-        <button class="btn-nav" onclick="goToIndex()">⬅ Kembali ke Menu</button>
+        <button class="btn-nav" onclick="goToIndex()">⬅ Back to Menu</button>
     </div>
 
+    <!-- 1. SETUP FORM -->
     <div id="setup-section" class="setup-box">
         <div class="input-group">
-            <label>Tambah Nama Pemain</label>
+            <label>Add Player Name</label>
             <div class="input-row">
-                <input type="text" id="input-player-name" class="flex-input" placeholder="Ketik nama pemain...">
-                <button class="btn-add" onclick="addPlayerToList()">+ Tambah Pemain</button>
+                <input type="text" id="input-player-name" class="flex-input" placeholder="Type player name...">
+                <button class="btn-add" onclick="addPlayerToList()">+ Add Player</button>
             </div>
             <div id="player-list-preview" class="player-list-preview">
-                </div>
+                <!-- Player tags will appear here -->
+            </div>
         </div>
         
         <div class="input-group">
-            <label for="input-location">Lokasi Pertandingan</label>
-            <input type="text" id="input-location" class="full-width" placeholder="Contoh: Jakarta Matchroom">
+            <label for="input-location">Match Location</label>
+            <input type="text" id="input-location" class="full-width" placeholder="e.g., Jakarta Matchroom">
         </div>
         
         <div class="input-group">
             <label for="input-race">Race To</label>
-            <input type="number" id="input-race" class="full-width" placeholder="Contoh: 5" min="1">
+            <input type="number" id="input-race" class="full-width" placeholder="e.g., 5" min="1">
         </div>
         
-        <button class="btn-start" onclick="initiateRace()">Mulai Pertandingan</button>
+        <button class="btn-start" onclick="initiateRace()">Start Match</button>
     </div>
 
+    <!-- 2. GAMEBOARD SECTION -->
     <div id="gameboard-section" class="hidden">
         <div id="race-meta" class="race-info"></div>
         
         <div id="cards-container" class="cards-container">
-            </div>
+            <!-- Player cards generated here -->
+        </div>
 
-        <button class="btn-reset" onclick="resetGame()">Reset Semua Data</button>
+        <!-- Global Control Panel (Stopwatch at the bottom) -->
+        <div class="global-control-panel">
+            <div class="global-timer-label">Total Match Time</div>
+            <div class="global-timer-display" id="global-timer">00:00.00</div>
+            <button class="btn-reset" onclick="resetGame()">Reset Match Data</button>
+        </div>
     </div>
 </div>
 
 <script>
-    let tempPlayers = []; // Menyimpan nama list pemain sementara sebelum start
+    let tempPlayers = []; 
     let playersData = [];
     let raceTo = 0;
     let locationName = "";
+    
+    // Global Stopwatch Variables
+    let matchStartTime = null;
+    let matchElapsedTime = 0;
+    let globalTimerInterval = null;
 
-    // SINKRONISASI DARK MODE DENGAN INDEX.HTML
+    // SYNC THEME WITH INDEX.HTML
     const syncTheme = () => {
         const savedTheme = localStorage.getItem('billiard-theme') || 'light';
         document.body.setAttribute('data-theme', savedTheme);
     };
     syncTheme();
 
-    // Fungsi Tambah Pemain ke List Sementara
+    // Add Player to Temporary Array
     function addPlayerToList() {
         const inputElement = document.getElementById('input-player-name');
         const name = inputElement.value.trim();
 
         if (!name) {
-            alert("Masukkan nama terlebih dahulu!");
+            alert("Please type a name first!");
             return;
         }
 
         if (tempPlayers.includes(name)) {
-            alert("Nama pemain ini sudah ditambahkan!");
+            alert("This player has already been added!");
             return;
         }
 
         tempPlayers.push(name);
-        inputElement.value = ''; // Reset form input nama
+        inputElement.value = ''; 
         renderPlayerTags();
     }
 
-    // Mengizinkan tekan 'Enter' untuk menambah pemain
+    // Allow 'Enter' keypress to add player
     document.getElementById('input-player-name').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             addPlayerToList();
         }
     });
 
-    // Menampilkan tag nama-nama pemain
+    // Render Tag Badges for Added Players
     function renderPlayerTags() {
         const previewDiv = document.getElementById('player-list-preview');
         previewDiv.innerHTML = '';
 
         if(tempPlayers.length === 0) {
-            previewDiv.innerHTML = '<span style="color:var(--sub); font-size:13px; padding: 5px;">Belum ada pemain yang ditambahkan.</span>';
+            previewDiv.innerHTML = '<span style="color:var(--sub); font-size:13px; padding: 5px;">No players added yet.</span>';
             return;
         }
 
@@ -386,34 +421,31 @@
         });
     }
 
-    // Fungsi Hapus Pemain dari list sebelum start
+    // Remove Player from list before setup confirmation
     function removePlayerFromList(index) {
         tempPlayers.splice(index, 1);
         renderPlayerTags();
     }
 
-    // Mulai Pertandingan
+    // Initiate Match Screen
     function initiateRace() {
         locationName = document.getElementById('input-location').value.trim() || "Local Arena";
         raceTo = parseInt(document.getElementById('input-race').value);
 
         if (tempPlayers.length === 0) {
-            alert("Harap tambahkan minimal 1 pemain!");
+            alert("Please add at least 1 player!");
             return;
         }
         if (!raceTo) {
-            alert("Harap isi target skor Race To!");
+            alert("Please set the Race To target score!");
             return;
         }
 
-        // Setup Data Final Pemain
+        // Setup Finalized Player Objects
         playersData = tempPlayers.map((name, index) => ({
             id: index,
             name: name,
             score: 0,
-            startTime: null,
-            elapsedTime: 0,
-            timerInterval: null,
             pointsScored: 0
         }));
 
@@ -422,6 +454,7 @@
         document.getElementById('gameboard-section').classList.remove('hidden');
 
         renderCards();
+        startGlobalTimer();
     }
 
     function renderCards() {
@@ -436,26 +469,23 @@
             card.innerHTML = `
                 <div class="player-name">${player.name}</div>
                 <div class="player-location">📍 ${locationName}</div>
-                <div class="timer-display" id="timer-${player.id}">00:00.00</div>
                 <div class="score-display" id="score-${player.id}">0</div>
                 <div class="stats-box">
-                    Avg Time/Poin: <span id="avg-${player.id}">-</span>
+                    Avg Time/Game: <span id="avg-${player.id}">-</span>
                 </div>
-                <button class="btn-score" id="btn-${player.id}" onclick="addPoint(${player.id})">+1 Poin</button>
+                <button class="btn-score" id="btn-${player.id}" onclick="addPoint(${player.id})">+1 Point</button>
             `;
             container.appendChild(card);
-            startPlayerTimer(player.id);
         });
     }
 
-    // Sistem Stopwatch
-    function startPlayerTimer(id) {
-        const player = playersData[id];
-        player.startTime = Date.now() - player.elapsedTime;
+    // Unified Global Timer Logic
+    function startGlobalTimer() {
+        matchStartTime = Date.now() - matchElapsedTime;
 
-        player.timerInterval = setInterval(() => {
-            player.elapsedTime = Date.now() - player.startTime;
-            document.getElementById(`timer-${id}`).innerText = formatTime(player.elapsedTime);
+        globalTimerInterval = setInterval(() => {
+            matchElapsedTime = Date.now() - matchStartTime;
+            document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
         }, 10);
     }
 
@@ -471,10 +501,10 @@
     }
 
     function formatAvgTime(ms) {
-        return `${(ms / 1000).toFixed(2)} detik`;
+        return `${(ms / 1000).toFixed(2)}s`;
     }
 
-    // Tambah Skor & Rata-rata waktu
+    // Add Score and Calculate Average Time per point using the running match time
     function addPoint(id) {
         const player = playersData[id];
         player.score++;
@@ -482,7 +512,8 @@
         
         document.getElementById(`score-${id}`).innerText = player.score;
 
-        let averageTime = player.elapsedTime / player.pointsScored;
+        // Avg time based on total match time elapsed divided by individual points
+        let averageTime = matchElapsedTime / player.pointsScored;
         document.getElementById(`avg-${id}`).innerText = formatAvgTime(averageTime);
 
         if (player.score >= raceTo) {
@@ -490,28 +521,31 @@
         }
     }
 
+    // End Match Sequence
     function endGame(winnerId) {
+        clearInterval(globalTimerInterval); // Freeze stopwatch total match
+        
         playersData.forEach(player => {
-            clearInterval(player.timerInterval);
             document.getElementById(`btn-${player.id}`).disabled = true;
         });
+        
         document.getElementById(`card-${winnerId}`).classList.add('winner');
-        alert(`Selamat! ${playersData[winnerId].name} memenangkan game (Race to ${raceTo})!`);
+        alert(`Congratulations! ${playersData[winnerId].name} won the match (Race to ${raceTo})!`);
     }
 
-    // Reset Total Game
+    // Absolute Clear Reset
     function resetGame() {
-        if(confirm("Apakah Anda yakin ingin mereset permainan? Seluruh data live akan hilang.")) {
-            playersData.forEach(player => {
-                if(player.timerInterval) clearInterval(player.timerInterval);
-            });
+        if(confirm("Are you sure you want to reset? Current match progress will be lost.")) {
+            if(globalTimerInterval) clearInterval(globalTimerInterval);
 
             playersData = [];
             tempPlayers = [];
             raceTo = 0;
+            matchElapsedTime = 0;
 
             document.getElementById('input-location').value = '';
             document.getElementById('input-race').value = '';
+            document.getElementById('global-timer').innerText = "00:00.00";
             renderPlayerTags();
 
             document.getElementById('gameboard-section').classList.add('hidden');
@@ -519,12 +553,10 @@
         }
     }
 
-    // Fungsi Navigasi Kembali ke Index
     function goToIndex() {
         window.location.href = "index.html";
     }
 
-    // Jalankan render tag kosong pertama kali dibuka
     renderPlayerTags();
 </script>
 </body>
