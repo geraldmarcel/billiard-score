@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Race Scoreboard & Timer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Library untuk generate HTML menjadi Gambar (Screenshot) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg: #f5f5f7; 
@@ -158,6 +160,15 @@
         }
         .btn-reset:hover { opacity: 0.9; }
 
+        .btn-share {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
         /* Player Tags */
         .player-list-preview {
             display: flex;
@@ -199,6 +210,15 @@
             padding: 12px;
             border-radius: 16px;
             border: 1px solid var(--border);
+        }
+
+        /* Wrapper khusus area screenshot agar rapi saat diconvert jadi gambar */
+        .screenshot-area {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 24px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .cards-container {
@@ -254,7 +274,7 @@
         }
         .btn-score:hover { opacity: 0.9; }
 
-        /* Global Control Panel at the Bottom */
+        /* Global Control Panel */
         .global-control-panel {
             background: var(--card);
             border: 1px solid var(--border);
@@ -290,7 +310,6 @@
             margin-bottom: 5px;
         }
 
-        /* Combined Single Stats Box */
         .global-stats-container {
             width: 100%;
             max-width: 400px;
@@ -318,13 +337,18 @@
             color: var(--primary);
         }
 
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
         .hidden { display: none !important; }
         
-        /* ⛰️ "ON THE HILL" CARD STATUS */
+        /* ⛰️ ON THE HILL */
         .on-the-hill {
             border-color: var(--warning) !important;
             background: rgba(255, 149, 0, 0.04);
-            box-shadow: 0 10px 25px rgba(255, 149, 0, 0.15);
         }
         .on-the-hill .score-display {
             color: var(--warning);
@@ -333,36 +357,24 @@
         .on-the-hill::before {
             content: "ON THE HILL";
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: var(--warning);
-            color: #ffffff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 20px;
-            letter-spacing: 0.5px;
+            top: 12px; right: 12px;
+            background: var(--warning); color: #ffffff;
+            font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 20px;
         }
 
-        /* 🏁 WINNER CARD STATUS */
+        /* 🏁 WINNER */
         .winner {
             border-color: #ffcc00 !important;
             background: rgba(255, 204, 0, 0.08);
-            box-shadow: 0 15px 35px rgba(255, 204, 0, 0.25);
         }
         .winner .player-name { color: #ffcc00; }
         .winner .score-display { color: #ffcc00; animation: none;}
         .winner::before {
             content: "WINNER";
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: #ffcc00;
-            color: #000000;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 20px;
+            top: 12px; right: 12px;
+            background: #ffcc00; color: #000000;
+            font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 20px;
         }
 
         @keyframes pulse-score {
@@ -388,9 +400,7 @@
                 <input type="text" id="input-player-name" class="flex-input" placeholder="Type player name...">
                 <button class="btn-add" onclick="addPlayerToList()">+ Add Player</button>
             </div>
-            <div id="player-list-preview" class="player-list-preview">
-                <!-- Player tags will appear here -->
-            </div>
+            <div id="player-list-preview" class="player-list-preview"></div>
         </div>
         
         <div class="input-group">
@@ -408,24 +418,28 @@
 
     <!-- 2. GAMEBOARD SECTION -->
     <div id="gameboard-section" class="hidden">
-        <div id="race-meta" class="race-info"></div>
         
-        <div id="cards-container" class="cards-container">
-            <!-- Player cards generated here -->
+        <!-- Bungkus area ini untuk dironntgen menjadi screenshot -->
+        <div id="capture-zone" class="screenshot-area">
+            <div id="race-meta" class="race-info"></div>
+            <div id="cards-container" class="cards-container"></div>
         </div>
 
-        <!-- Global Control Panel (Stopwatch & Merged Analytics at the bottom) -->
+        <!-- Global Control Panel -->
         <div class="global-control-panel">
             <div class="global-timer-label">Total Match Time</div>
             <div class="global-timer-display" id="global-timer">00:00.00</div>
             
-            <!-- Global Analytics Segment (Unified Match Average) -->
             <div class="global-stats-container">
                 <div class="stats-label">⏱️ Total Match Average Time / Point</div>
                 <div class="stats-value" id="global-avg-value">-</div>
             </div>
 
-            <button class="btn-reset" onclick="resetGame()">Reset Match Data</button>
+            <div class="action-buttons">
+                <!-- Tombol share manual (opsional, muncul di akhir) -->
+                <button id="btn-share-node" class="btn-share hidden" onclick="generateScreenshotAndShare()">📤 Share Result</button>
+                <button class="btn-reset" onclick="resetGame()">Reset Match Data</button>
+            </div>
         </div>
     </div>
 </div>
@@ -436,98 +450,70 @@
     let raceTo = 0;
     let locationName = "";
     let totalMatchPoints = 0;
+    let blobGambarGlobal = null; // Menyimpan data file gambar jepretan
     
-    // Global Stopwatch Variables
     let matchStartTime = null;
     let matchElapsedTime = 0;
     let globalTimerInterval = null;
 
-    // SYNC THEME WITH INDEX.HTML
     const syncTheme = () => {
         const savedTheme = localStorage.getItem('billiard-theme') || 'light';
         document.body.setAttribute('data-theme', savedTheme);
     };
     syncTheme();
 
-    // Add Player to Temporary Array
     function addPlayerToList() {
         const inputElement = document.getElementById('input-player-name');
         const name = inputElement.value.trim();
-
-        if (!name) {
-            alert("Please type a name first!");
-            return;
-        }
-
-        if (tempPlayers.includes(name)) {
-            alert("This player has already been added!");
-            return;
-        }
+        if (!name) return;
+        if (tempPlayers.includes(name)) { alert("Already added!"); return; }
 
         tempPlayers.push(name);
         inputElement.value = ''; 
         renderPlayerTags();
     }
 
-    // Allow 'Enter' keypress to add player
     document.getElementById('input-player-name').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            addPlayerToList();
-        }
+        if (e.key === 'Enter') addPlayerToList();
     });
 
-    // Render Tag Badges for Added Players
     function renderPlayerTags() {
         const previewDiv = document.getElementById('player-list-preview');
         previewDiv.innerHTML = '';
-
         if(tempPlayers.length === 0) {
             previewDiv.innerHTML = '<span style="color:var(--sub); font-size:13px; padding: 5px;">No players added yet.</span>';
             return;
         }
-
         tempPlayers.forEach((name, index) => {
             const tag = document.createElement('div');
             tag.className = 'player-tag';
-            tag.innerHTML = `
-                ${name} 
-                <span class="remove-player" onclick="removePlayerFromList(${index})">&times;</span>
-            `;
+            tag.innerHTML = `${name} <span class="remove-player" onclick="removePlayerFromList(${index})">&times;</span>`;
             previewDiv.appendChild(tag);
         });
     }
 
-    // Remove Player from list before setup confirmation
     function removePlayerFromList(index) {
         tempPlayers.splice(index, 1);
         renderPlayerTags();
     }
 
-    // Initiate Match Screen
     function initiateRace() {
         locationName = document.getElementById('input-location').value.trim() || "Local Arena";
         raceTo = parseInt(document.getElementById('input-race').value);
 
-        if (tempPlayers.length === 0) {
-            alert("Please add at least 1 player!");
-            return;
-        }
-        if (!raceTo || raceTo < 1) {
-            alert("Please set a valid Race To target score!");
+        if (tempPlayers.length === 0 || !raceTo) {
+            alert("Please complete the forms!");
             return;
         }
 
-        // Setup Finalized Player Objects
-        playersData = tempPlayers.map((name, index) => ({
-            id: index,
-            name: name,
-            score: 0
-        }));
-
+        playersData = tempPlayers.map((name, index) => ({ id: index, name: name, score: 0 }));
         totalMatchPoints = 0;
+        blobGambarGlobal = null;
+
         document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
         document.getElementById('setup-section').classList.add('hidden');
         document.getElementById('gameboard-section').classList.remove('hidden');
+        document.getElementById('btn-share-node').classList.add('hidden');
 
         renderCards();
         updateGlobalStatsUI();
@@ -537,12 +523,10 @@
     function renderCards() {
         const container = document.getElementById('cards-container');
         container.innerHTML = '';
-
         playersData.forEach(player => {
             const card = document.createElement('div');
             card.className = `player-card`;
             card.id = `card-${player.id}`;
-
             card.innerHTML = `
                 <div class="player-name">${player.name}</div>
                 <div class="player-location">📍 ${locationName}</div>
@@ -553,10 +537,8 @@
         });
     }
 
-    // Unified Global Timer Logic
     function startGlobalTimer() {
         matchStartTime = Date.now() - matchElapsedTime;
-
         globalTimerInterval = setInterval(() => {
             matchElapsedTime = Date.now() - matchStartTime;
             document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
@@ -567,93 +549,104 @@
         let minutes = Math.floor(ms / 60000);
         let seconds = Math.floor((ms % 60000) / 1000);
         let centiseconds = Math.floor((ms % 1000) / 10);
-        return (
-            (minutes < 10 ? "0" : "") + minutes + ":" +
-            (seconds < 10 ? "0" : "") + seconds + "." +
-            (centiseconds < 10 ? "0" : "") + centiseconds
-        );
+        return ((minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "." + (centiseconds < 10 ? "0" : "") + centiseconds);
     }
 
-    function formatAvgTime(ms) {
-        return `${(ms / 1000).toFixed(2)}s`;
-    }
+    function formatAvgTime(ms) { return `${(ms / 1000).toFixed(2)}s`; }
 
-    // Calculate dynamic unified average time for the entire match overall
     function updateGlobalStatsUI() {
         const avgDisplay = document.getElementById('global-avg-value');
-        if (totalMatchPoints > 0) {
-            avgDisplay.innerText = formatAvgTime(matchElapsedTime / totalMatchPoints);
-        } else {
-            avgDisplay.innerText = "-";
-        }
+        avgDisplay.innerText = totalMatchPoints > 0 ? formatAvgTime(matchElapsedTime / totalMatchPoints) : "-";
     }
 
-    // Add Score and Calculate Progress Flags
     function addPoint(id) {
         const player = playersData[id];
         player.score++;
-        totalMatchPoints++; // Increment total cumulative points across all cards
+        totalMatchPoints++;
         
         const cardElement = document.getElementById(`card-${id}`);
         document.getElementById(`score-${id}`).innerText = player.score;
 
-        // Condition checking
         if (player.score >= raceTo) {
             endGame(id);
         } else if (player.score === (raceTo - 1)) {
-            // Player reaches "On the Hill" phase (1 point away from winning)
-            cardElement.classList.remove('winner');
             cardElement.classList.add('on-the-hill');
         }
-
         updateGlobalStatsUI();
     }
 
-    // End Match Sequence
     function endGame(winnerId) {
-        clearInterval(globalTimerInterval); // Freeze stopwatch total match
+        clearInterval(globalTimerInterval); 
         
         playersData.forEach(player => {
             document.getElementById(`btn-${player.id}`).disabled = true;
-            
-            // Strip structural visual modifiers from losers
-            if(player.id !== winnerId) {
-                document.getElementById(`card-${player.id}`).classList.remove('on-the-hill');
-            }
+            if(player.id !== winnerId) document.getElementById(`card-${player.id}`).classList.remove('on-the-hill');
         });
         
         const winningCard = document.getElementById(`card-${winnerId}`);
         winningCard.classList.remove('on-the-hill');
         winningCard.classList.add('winner');
         
-        alert(`Congratulations! ${playersData[winnerId].name} won the match (Race to ${raceTo})!`);
+        document.getElementById('btn-share-node').classList.remove('hidden');
+
+        // Beri jeda 800ms agar animasi CSS render kartu selesai terpasang sempurna baru jepret otomatis
+        setTimeout(() => {
+            generateScreenshotAndShare(true); 
+        }, 800);
     }
 
-    // Absolute Clear Reset
+    // ================= FITUR AUTO SCREENSHOT & SHARE SHEET =================
+    function generateScreenshotAndShare(isAuto = false) {
+        const target = document.getElementById('capture-zone');
+        
+        // Render area papan skor menjadi Canvas Gambar
+        html2canvas(target, {
+            backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg'),
+            scale: 2 // Skala 2x agar gambar tajam / HD saat dikirim
+        }).then(canvas => {
+            canvas.toBlob(blob => {
+                blobGambarGlobal = blob;
+                const fileGambar = new File([blob], "billiard-match-result.png", { type: "image/png" });
+
+                // Cek apakah browser mendukung Web Share API untuk kirim file gambar
+                if (navigator.canShare && navigator.canShare({ files: [fileGambar] })) {
+                    navigator.share({
+                        files: [fileGambar],
+                        title: 'Billiard Live Scoreboard Result',
+                        text: `Match completed! Total Time: ${document.getElementById('global-timer').innerText}.`
+                    })
+                    .then(() => console.log('Successfully Shared!'))
+                    .catch((error) => console.log('Sharing cancelled/failed', error));
+                } else {
+                    // Fallback jika dibuka di browser jadul / PC yang tidak dukung share gambar langsung
+                    if (!isAuto) {
+                        // Jika user klik tombol share manual, otomatis download gambarnya sebagai ganti
+                        const link = document.createElement('a');
+                        link.download = 'billiard-result.png';
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                    } else {
+                        alert("Game Over! Screenshot generated. You can use the 'Share Result' button to download it.");
+                    }
+                }
+            }, 'image/png');
+        });
+    }
+
     function resetGame() {
-        if(confirm("Are you sure you want to reset? Current match progress will be lost.")) {
+        if(confirm("Are you sure you want to reset?")) {
             if(globalTimerInterval) clearInterval(globalTimerInterval);
-
-            playersData = [];
-            tempPlayers = [];
-            raceTo = 0;
-            matchElapsedTime = 0;
-            totalMatchPoints = 0;
-
+            playersData = []; tempPlayers = []; raceTo = 0; matchElapsedTime = 0; totalMatchPoints = 0; blobGambarGlobal = null;
             document.getElementById('input-location').value = '';
             document.getElementById('input-race').value = '';
             document.getElementById('global-timer').innerText = "00:00.00";
             renderPlayerTags();
-
             document.getElementById('gameboard-section').classList.add('hidden');
             document.getElementById('setup-section').classList.remove('hidden');
         }
     }
 
-    function goToIndex() {
-        window.location.href = "index.html";
-    }
-
+    function goToIndex() { window.location.href = "index.html"; }
     renderPlayerTags();
 </script>
 </body>
