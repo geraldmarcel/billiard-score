@@ -16,6 +16,7 @@
             --accent: #f5f5f7;
             --success: #34c759;
             --danger: #ff3b30;
+            --warning: #ff9500;
         }
         [data-theme="dark"] {
             --bg: #000000; 
@@ -27,6 +28,7 @@
             --accent: #2c2c2e;
             --success: #30d158;
             --danger: #ff453a;
+            --warning: #ff9f0a;
         }
 
         body {
@@ -150,7 +152,7 @@
         .btn-reset {
             background-color: var(--danger);
             color: white;
-            padding: 12px 24px;
+            padding: 10px 24px;
             border-radius: 20px;
             font-size: 14px;
         }
@@ -203,19 +205,21 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 24px;
-            margin-bottom: 40px;
+            margin-bottom: 45px;
         }
 
         .player-card {
             background: var(--card);
             border-radius: 24px;
-            padding: 30px 20px;
+            padding: 35px 20px;
             border: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             align-items: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
         .player-name {
@@ -227,27 +231,15 @@
         .player-location {
             font-size: 13px;
             color: var(--sub);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .score-display {
-            font-size: 84px;
+            font-size: 96px;
             font-weight: 800;
-            margin: 10px 0;
+            margin: 15px 0;
             line-height: 1;
-        }
-
-        .stats-box {
-            font-size: 13px;
-            color: var(--sub);
-            background: var(--accent);
-            padding: 10px;
-            border-radius: 12px;
-            width: 100%;
-            text-align: center;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            border: 1px solid var(--border);
+            transition: color 0.3s;
         }
 
         .btn-score {
@@ -258,50 +250,131 @@
             border-radius: 14px;
             font-size: 15px;
             font-weight: 700;
+            margin-top: 15px;
         }
         .btn-score:hover { opacity: 0.9; }
 
-        /* Global Control Section at the Bottom */
+        /* Global Control Panel at the Bottom */
         .global-control-panel {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 24px;
-            padding: 25px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.04);
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .global-timer-label {
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             color: var(--sub);
         }
 
         .global-timer-display {
             font-family: monospace;
-            font-size: 42px;
+            font-size: 46px;
             font-weight: 800;
             background: #000000;
             color: #30d158;
-            padding: 10px 30px;
-            border-radius: 16px;
+            padding: 10px 35px;
+            border-radius: 18px;
             letter-spacing: 1px;
             box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            margin-bottom: 5px;
         }
+
+        /* Combined Stats Layout inside Panel */
+        .global-stats-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        .stats-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+        .stat-line:last-child { border-bottom: none; }
+        .stat-line .p-name { font-weight: 600; }
+        .stat-line .p-avg { font-family: monospace; font-weight: 700; color: var(--primary); }
 
         .hidden { display: none !important; }
         
+        /* ⛰️ "ON THE HILL" CARD STATUS */
+        .on-the-hill {
+            border-color: var(--warning) !important;
+            background: rgba(255, 149, 0, 0.04);
+            box-shadow: 0 10px 25px rgba(255, 149, 0, 0.15);
+        }
+        .on-the-hill .score-display {
+            color: var(--warning);
+            animation: pulse-score 2s infinite;
+        }
+        .on-the-hill::before {
+            content: "ON THE HILL";
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--warning);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        /* 🏁 WINNER CARD STATUS */
         .winner {
             border-color: #ffcc00 !important;
-            background: rgba(255, 204, 0, 0.05);
-            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            background: rgba(255, 204, 0, 0.08);
+            box-shadow: 0 15px 35px rgba(255, 204, 0, 0.25);
         }
         .winner .player-name { color: #ffcc00; }
+        .winner .score-display { color: #ffcc00; animation: none;}
+        .winner::before {
+            content: "WINNER";
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #ffcc00;
+            color: #000000;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        @keyframes pulse-score {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -332,7 +405,7 @@
         
         <div class="input-group">
             <label for="input-race">Race To</label>
-            <input type="number" id="input-race" class="full-width" placeholder="e.g., 5" min="1">
+            <input type="number" id="input-race" class="full-width" placeholder="e.g., 5" min="2">
         </div>
         
         <button class="btn-start" onclick="initiateRace()">Start Match</button>
@@ -346,10 +419,19 @@
             <!-- Player cards generated here -->
         </div>
 
-        <!-- Global Control Panel (Stopwatch at the bottom) -->
+        <!-- Global Control Panel (Stopwatch & Merged Analytics at the bottom) -->
         <div class="global-control-panel">
             <div class="global-timer-label">Total Match Time</div>
             <div class="global-timer-display" id="global-timer">00:00.00</div>
+            
+            <!-- Global Analytics Segment -->
+            <div class="global-stats-container">
+                <div class="stats-header">⏱️ Average Time / Point Analytics</div>
+                <div id="global-stats-list">
+                    <!-- Dynamic live average logs populate here -->
+                </div>
+            </div>
+
             <button class="btn-reset" onclick="resetGame()">Reset Match Data</button>
         </div>
     </div>
@@ -436,8 +518,8 @@
             alert("Please add at least 1 player!");
             return;
         }
-        if (!raceTo) {
-            alert("Please set the Race To target score!");
+        if (!raceTo || raceTo < 1) {
+            alert("Please set a valid Race To target score!");
             return;
         }
 
@@ -454,6 +536,7 @@
         document.getElementById('gameboard-section').classList.remove('hidden');
 
         renderCards();
+        updateGlobalStatsUI();
         startGlobalTimer();
     }
 
@@ -470,9 +553,6 @@
                 <div class="player-name">${player.name}</div>
                 <div class="player-location">📍 ${locationName}</div>
                 <div class="score-display" id="score-${player.id}">0</div>
-                <div class="stats-box">
-                    Avg Time/Game: <span id="avg-${player.id}">-</span>
-                </div>
                 <button class="btn-score" id="btn-${player.id}" onclick="addPoint(${player.id})">+1 Point</button>
             `;
             container.appendChild(card);
@@ -504,21 +584,47 @@
         return `${(ms / 1000).toFixed(2)}s`;
     }
 
-    // Add Score and Calculate Average Time per point using the running match time
+    // Render Global Rata-rata / Average Lists underneath the Stopwatch
+    function updateGlobalStatsUI() {
+        const statsListContainer = document.getElementById('global-stats-list');
+        statsListContainer.innerHTML = '';
+
+        playersData.forEach(player => {
+            const row = document.createElement('div');
+            row.className = 'stat-line';
+            
+            let displayAvg = "-";
+            if (player.pointsScored > 0) {
+                displayAvg = formatAvgTime(matchElapsedTime / player.pointsScored);
+            }
+
+            row.innerHTML = `
+                <span class="p-name">${player.name} (Score: ${player.score})</span>
+                <span class="p-avg">${displayAvg}</span>
+            `;
+            statsListContainer.appendChild(row);
+        });
+    }
+
+    // Add Score and Calculate Progress Flags
     function addPoint(id) {
         const player = playersData[id];
         player.score++;
         player.pointsScored++;
         
+        const cardElement = document.getElementById(`card-${id}`);
         document.getElementById(`score-${id}`).innerText = player.score;
 
-        // Avg time based on total match time elapsed divided by individual points
-        let averageTime = matchElapsedTime / player.pointsScored;
-        document.getElementById(`avg-${id}`).innerText = formatAvgTime(averageTime);
-
+        // Condition checking
         if (player.score >= raceTo) {
             endGame(id);
+        } else if (player.score === (raceTo - 1)) {
+            // Player reaches "On the Hill" phase (1 point away from winning)
+            cardElement.classList.remove('winner');
+            cardElement.classList.add('on-the-hill');
         }
+
+        updateGlobalStatsUI();
     }
 
     // End Match Sequence
@@ -527,9 +633,17 @@
         
         playersData.forEach(player => {
             document.getElementById(`btn-${player.id}`).disabled = true;
+            
+            // Strip structural visual modifiers from losers
+            if(player.id !== winnerId) {
+                document.getElementById(`card-${player.id}`).classList.remove('on-the-hill');
+            }
         });
         
-        document.getElementById(`card-${winnerId}`).classList.add('winner');
+        const winningCard = document.getElementById(`card-${winnerId}`);
+        winningCard.classList.remove('on-the-hill');
+        winningCard.classList.add('winner');
+        
         alert(`Congratulations! ${playersData[winnerId].name} won the match (Race to ${raceTo})!`);
     }
 
