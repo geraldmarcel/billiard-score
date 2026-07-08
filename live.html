@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billiard Live Scoreboard</title>
+<title>Billiard Live Scoreboard - Multi Device</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root { 
@@ -75,6 +75,10 @@
   <div id="setup-section" class="card">
     <h2>🎱 Setup New Live Match</h2>
     <div class="input-group">
+      <label>Room / Meja ID (Untuk Multi Device)</label>
+      <input type="text" id="input-room-id" placeholder="Contoh: meja-1, tanding-pro">
+    </div>
+    <div class="input-group">
       <label>Arena Name / Location</label>
       <input type="text" id="input-location" placeholder="e.g. Dungeon Pool, Hongdae">
     </div>
@@ -126,13 +130,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Mendapatkan ID meja dari parameter URL (?room=Meja1) jika ada
+// Baca Room ID dari link URL (?room=id_meja)
 const urlParams = new URLSearchParams(window.location.search);
-const roomId = urlParams.get('room') || 'default_room';
-document.getElementById('room-indicator').innerText = `Room: ${roomId}`;
+let roomId = urlParams.get('room') || '';
 
-// Jalur database khusus live scoreboard agar aman dari tabrakan data
-const dbRoomPath = `billiard_live_scoreboard/${roomId}`;
+let dbRoomPath = roomId ? `billiard_live_scoreboard/${roomId}` : null;
 
 let tempPlayers = []; 
 let playersData = [];
@@ -145,52 +147,64 @@ let matchElapsedTime = 0;
 let globalTimerInterval = null;
 let isGameOver = false;
 
-// Sinkronisasi Tema Otomatis dengan web utama
+// Tema gelap/terang otomatis
 const savedTheme = localStorage.getItem('billiard-theme') || 'light';
 document.body.setAttribute('data-theme', savedTheme);
 
-// SINKRONISASI DATA REALTIME DARI FIREBASE
-onValue(ref(db, dbRoomPath), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        playersData = data.playersData || [];
-        raceTo = data.raceTo || 0;
-        locationName = data.locationName || "";
-        totalMatchPoints = data.totalMatchPoints || 0;
-        matchElapsedTime = data.matchElapsedTime || 0;
-        isGameOver = data.isGameOver || false;
+if (roomId) {
+    document.getElementById('room-indicator').innerText = `Room: ${roomId}`;
+    startListeningToFirebase();
+} else {
+    document.getElementById('room-indicator').innerText = `Room: Not Connected`;
+}
 
-        document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
-        document.getElementById('setup-section').classList.add('hidden');
-        document.getElementById('gameboard-section').classList.remove('hidden');
-        
-        renderCardsFromFirebase();
-        updateGlobalStatsUI();
+// FUNGSI UTAMA SINKRONISASI REAL-TIME MULTI DEVICE
+function startListeningToFirebase() {
+    if (!dbRoomPath) return;
+    
+    onValue(ref(db, dbRoomPath), (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            playersData = data.playersData || [];
+            raceTo = data.raceTo || 0;
+            locationName = data.locationName || "";
+            totalMatchPoints = data.totalMatchPoints || 0;
+            matchElapsedTime = data.matchElapsedTime || 0;
+            isGameOver = data.isGameOver || false;
 
-        if (data.isTimerRunning && !globalTimerInterval && !isGameOver) {
-            matchStartTime = Date.now() - matchElapsedTime;
-            globalTimerInterval = setInterval(() => {
-                matchElapsedTime = Date.now() - matchStartTime;
+            document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
+            document.getElementById('setup-section').classList.add('hidden');
+            document.getElementById('gameboard-section').classList.remove('hidden');
+            
+            renderCardsFromFirebase();
+            updateGlobalStatsUI();
+
+            if (data.isTimerRunning && !globalTimerInterval && !isGameOver) {
+                matchStartTime = Date.now() - matchElapsedTime;
+                globalTimerInterval = setInterval(() => {
+                    matchElapsedTime = Date.now() - matchStartTime;
+                    document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
+                }, 10);
+            } else if (!data.isTimerRunning || isGameOver) {
+                clearInterval(globalTimerInterval);
+                globalTimerInterval = null;
                 document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
-            }, 10);
-        } else if (!data.isTimerRunning || isGameOver) {
+            }
+
+            if (isGameOver) {
+                document.getElementById('btn-share-node').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-share-node').classList.add('hidden');
+            }
+        } else {
+            // Jika data di-reset atau tidak ada
             clearInterval(globalTimerInterval);
             globalTimerInterval = null;
-            document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
+            document.getElementById('gameboard-section').classList.add('hidden');
+            document.getElementById('setup-section').classList.remove('hidden');
         }
-
-        if (isGameOver) {
-            document.getElementById('btn-share-node').classList.remove('hidden');
-        } else {
-            document.getElementById('btn-share-node').classList.add('hidden');
-        }
-    } else {
-        clearInterval(globalTimerInterval);
-        globalTimerInterval = null;
-        document.getElementById('gameboard-section').classList.add('hidden');
-        document.getElementById('setup-section').classList.remove('hidden');
-    }
-});
+    });
+}
 
 function addPlayerToList() {
     const inputElement = document.getElementById('input-player-name');
@@ -219,13 +233,24 @@ function renderPlayerTags() {
 }
 
 function initiateRace() {
+    let customRoom = document.getElementById('input-room-id').value.trim().replace(/[^a-zA-NET0-9-_]/gi, '');
     locationName = document.getElementById('input-location').value.trim() || "Local Arena";
     raceTo = parseInt(document.getElementById('input-race').value);
 
+    if (!customRoom) {
+        alert("Silakan masukkan Room / Meja ID untuk sinkronisasi perangkat!");
+        return;
+    }
     if (tempPlayers.length === 0 || !raceTo) {
         alert("Please add players and set the target race!");
         return;
     }
+
+    // Ubah URL secara instan tanpa memuat ulang layar agar link bisa dibagikan ke device lain
+    window.history.pushState({}, '', `?room=${customRoom}`);
+    roomId = customRoom;
+    dbRoomPath = `billiard_live_scoreboard/${roomId}`;
+    document.getElementById('room-indicator').innerText = `Room: ${roomId}`;
 
     const initialPlayers = tempPlayers.map((name, index) => ({ id: index, name: name, score: 0 }));
 
@@ -237,6 +262,8 @@ function initiateRace() {
         matchElapsedTime: 0,
         isTimerRunning: true,
         isGameOver: false
+    }).then(() => {
+        startListeningToFirebase();
     });
 }
 
@@ -345,12 +372,16 @@ function generateScreenshotAndShare(isAuto = false) {
 function resetGame() {
     if(confirm("Are you sure you want to reset this match?")) {
         remove(ref(db, dbRoomPath)); 
+        window.history.pushState({}, '', window.location.pathname);
+        roomId = '';
+        dbRoomPath = null;
+        document.getElementById('room-indicator').innerText = `Room: Not Connected`;
         tempPlayers = [];
         renderPlayerTags();
     }
 }
 
-// MANAGEMENT TRICIGER KLIK ELEMEN STATIS
+// BIND KLIK STATIS
 document.getElementById('btn-add-player').onclick = addPlayerToList;
 document.getElementById('btn-start-race').onclick = initiateRace;
 document.getElementById('btn-reset').onclick = resetGame;
@@ -358,10 +389,10 @@ document.getElementById('btn-back').onclick = () => { window.location.href = "in
 document.getElementById('btn-share-node').onclick = () => generateScreenshotAndShare(false);
 
 document.getElementById('input-player-name').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addPlayerToList;
+    if (e.key === 'Enter') addPlayerToList();
 });
 
-// MANAGEMENT INTERAKSI ELEMEN DINAMIS (Anti-Error Modul)
+// CAPTURE KLIK DINAMIS (Anti-Error Modul)
 document.addEventListener('click', function(e) {
     if(e.target && e.target.classList.contains('remove-player')) {
         const index = parseInt(e.target.getAttribute('data-index'));
