@@ -1,442 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Race Scoreboard & Timer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <!-- Library untuk generate HTML menjadi Gambar (Screenshot) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        :root {
-            --bg: #f5f5f7; 
-            --card: #ffffff; 
-            --text: #1d1d1f; 
-            --sub: #86868b;
-            --border: #d2d2d7; 
-            --primary: #0071e3; 
-            --accent: #f5f5f7;
-            --success: #34c759;
-            --danger: #ff3b30;
-            --warning: #ff9500;
-        }
-        [data-theme="dark"] {
-            --bg: #000000; 
-            --card: #1c1c1e; 
-            --text: #f5f5f7; 
-            --sub: #a1a1a6;
-            --border: #38383a; 
-            --primary: #0a84ff; 
-            --accent: #2c2c2e;
-            --success: #30d158;
-            --danger: #ff453a;
-            --warning: #ff9f0a;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            transition: background 0.3s, color 0.3s;
-            box-sizing: border-box;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        .header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            width: 100%;
-        }
-
-        h1 {
-            font-weight: 800;
-            font-size: 28px;
-            letter-spacing: -0.5px;
-            margin: 0;
-        }
-
-        .btn-nav {
-            background: var(--card);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-        .btn-nav:hover { background: var(--accent); }
-
-        /* Setup Box */
-        .setup-box {
-            background: var(--card);
-            padding: 30px;
-            border-radius: 24px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        input {
-            background: var(--bg);
-            color: var(--text);
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .flex-input { flex-grow: 1; }
-        .full-width { width: 100%; box-sizing: border-box; }
-
-        button {
-            cursor: pointer;
-            border: none;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .btn-add {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .btn-add:hover { opacity: 0.9; }
-
-        .btn-start {
-            background-color: var(--success);
-            color: white;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .btn-start:hover { opacity: 0.9; }
-
-        .btn-reset {
-            background-color: var(--danger);
-            color: white;
-            padding: 10px 24px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        .btn-reset:hover { opacity: 0.9; }
-
-        .btn-share {
-            background-color: var(--primary);
-            color: white;
-            padding: 10px 24px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-right: 10px;
-        }
-
-        /* Player Tags */
-        .player-list-preview {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-            min-height: 40px;
-            padding: 10px;
-            background: var(--accent);
-            border-radius: 12px;
-            align-items: center;
-        }
-
-        .player-tag {
-            background: var(--card);
-            border: 1px solid var(--border);
-            padding: 6px 14px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .remove-player {
-            color: var(--danger);
-            cursor: pointer;
-            font-weight: 700;
-        }
-
-        /* Match Dashboard */
-        .race-info {
-            text-align: center;
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 25px;
-            background: var(--accent);
-            padding: 12px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-        }
-
-        .cards-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 45px;
-        }
-
-        .player-card {
-            background: var(--card);
-            border-radius: 24px;
-            padding: 35px 20px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .player-name {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .player-location {
-            font-size: 13px;
-            color: var(--sub);
-            margin-bottom: 25px;
-        }
-
-        .score-display {
-            font-size: 96px;
-            font-weight: 800;
-            margin: 15px 0;
-            line-height: 1;
-            transition: color 0.3s;
-        }
-
-        .btn-score {
-            background-color: var(--primary);
-            color: white;
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            margin-top: 15px;
-        }
-        .btn-score:hover { opacity: 0.9; }
-
-        /* Global Control Panel */
-        .global-control-panel {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.04);
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .global-timer-label {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--sub);
-        }
-
-        .global-timer-display {
-            font-family: monospace;
-            font-size: 46px;
-            font-weight: 800;
-            background: #000000;
-            color: #30d158;
-            padding: 10px 35px;
-            border-radius: 18px;
-            letter-spacing: 1px;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
-            margin-bottom: 5px;
-        }
-
-        .global-stats-container {
-            width: 100%;
-            max-width: 400px;
-            background: var(--accent);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .stats-label {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--sub);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-
-        .stats-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .hidden { display: none !important; }
-        
-        /* ⛰️ ON THE HILL */
-        .on-the-hill {
-            border-color: var(--warning) !important;
-            background: rgba(255, 149, 0, 0.04);
-        }
-        .on-the-hill .score-display {
-            color: var(--warning);
-            animation: pulse-score 2s infinite;
-        }
-        .on-the-hill::before {
-            content: "ON THE HILL";
-            position: absolute;
-            top: 12px; right: 12px;
-            background: var(--warning); color: #ffffff;
-            font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 20px;
-        }
-
-        /* 🏁 WINNER */
-        .winner {
-            border-color: #ffcc00 !important;
-            background: rgba(255, 204, 0, 0.08);
-        }
-        .winner .player-name { color: #ffcc00; }
-        .winner .score-display { color: #ffcc00; animation: none;}
-        .winner::before {
-            content: "WINNER";
-            position: absolute;
-            top: 12px; right: 12px;
-            background: #ffcc00; color: #000000;
-            font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 20px;
-        }
-
-        @keyframes pulse-score {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        /* Menyembunyikan tombol aksi khusus saat screenshot sedang diproses */
-        .hide-on-screenshot button, .hide-on-screenshot .btn-nav {
-            visibility: hidden !important;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container" id="full-page-zone">
-    <div class="header-area">
-        <h1>Live Scoreboard</h1>
-        <button class="btn-nav" onclick="goToIndex()">⬅ Back to Menu</button>
-    </div>
-
-    <!-- 1. SETUP FORM -->
-    <div id="setup-section" class="setup-box">
-        <div class="input-group">
-            <label>Add Player Name</label>
-            <div class="input-row">
-                <input type="text" id="input-player-name" class="flex-input" placeholder="Type player name...">
-                <button class="btn-add" onclick="addPlayerToList()">+ Add Player</button>
-            </div>
-            <div id="player-list-preview" class="player-list-preview"></div>
-        </div>
-        
-        <div class="input-group">
-            <label for="input-location">Match Location</label>
-            <input type="text" id="input-location" class="full-width" placeholder="e.g., Jakarta Matchroom">
-        </div>
-        
-        <div class="input-group">
-            <label for="input-race">Race To</label>
-            <input type="number" id="input-race" class="full-width" placeholder="e.g., 5" min="2">
-        </div>
-        
-        <button class="btn-start" onclick="initiateRace()">Start Match</button>
-    </div>
-
-    <!-- 2. GAMEBOARD SECTION -->
-    <div id="gameboard-section" class="hidden">
-        
-        <div id="race-meta" class="race-info"></div>
-        <div id="cards-container" class="cards-container"></div>
-
-        <!-- Global Control Panel -->
-        <div class="global-control-panel">
-            <div class="global-timer-label">Total Match Time</div>
-            <div class="global-timer-display" id="global-timer">00:00.00</div>
-            
-            <div class="global-stats-container">
-                <div class="stats-label">⏱️ Total Match Average Time / Point</div>
-                <div class="stats-value" id="global-avg-value">-</div>
-            </div>
-
-            <div class="action-buttons" id="control-buttons">
-                <button id="btn-share-node" class="btn-share hidden" onclick="generateScreenshotAndShare()">📤 Share Result</button>
-                <button class="btn-reset" onclick="resetGame()">Reset Match Data</button>
-            </div>
-        </div>
-    </div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
+    // ================= CONFIGURATION FIREBASE =================
+    // Menggunakan Firebase Config yang sama dengan aplikasi kamu yang lain
+    const firebaseConfig = {
+        apiKey: "AIzaSyCtlTm-HxYxa4f_Ypf-b-cs7zCnqWb5Tq4",
+        authDomain: "billiard-2b803.firebaseapp.com",
+        databaseURL: "https://billiard-2b803-default-rtdb.firebaseio.com",
+        projectId: "billiard-2b803",
+        storageBucket: "billiard-2b803.firebasestorage.app",
+        messagingSenderId: "444434542940",
+        appId: "1:444434542940:web:74b12f78ea71bd54f3d199"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    // Kuncinya di sini: Kita buat jalur terpisah khusus untuk fitur Live Scoreboard
+    // Anda juga bisa membuka multi-room/multi-meja dengan url: live.html?room=Meja1
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room') || 'default_room';
+    
+    // Jalur data disimpan di dalam node 'billiard_live_scoreboard' agar TIDAK BENTROK
+    const roomRef = db.ref('billiard_live_scoreboard/' + roomId);
+    // ==========================================================
+
     let tempPlayers = []; 
     let playersData = [];
     let raceTo = 0;
@@ -447,12 +37,56 @@
     let matchStartTime = null;
     let matchElapsedTime = 0;
     let globalTimerInterval = null;
+    let isGameOver = false;
 
     const syncTheme = () => {
         const savedTheme = localStorage.getItem('billiard-theme') || 'light';
         document.body.setAttribute('data-theme', savedTheme);
     };
     syncTheme();
+
+    // 1. LISTEN DATABASE FIREBASE (REAL-TIME SINKRONISASI & ANTI-REFRESH)
+    roomRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            playersData = data.playersData || [];
+            raceTo = data.raceTo || 0;
+            locationName = data.locationName || "";
+            totalMatchPoints = data.totalMatchPoints || 0;
+            matchElapsedTime = data.matchElapsedTime || 0;
+            isGameOver = data.isGameOver || false;
+
+            document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
+            document.getElementById('setup-section').classList.add('hidden');
+            document.getElementById('gameboard-section').classList.remove('hidden');
+            
+            renderCardsFromFirebase();
+            updateGlobalStatsUI();
+
+            if (data.isTimerRunning && !globalTimerInterval && !isGameOver) {
+                matchStartTime = Date.now() - matchElapsedTime;
+                globalTimerInterval = setInterval(() => {
+                    matchElapsedTime = Date.now() - matchStartTime;
+                    document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
+                }, 10);
+            } else if (!data.isTimerRunning || isGameOver) {
+                clearInterval(globalTimerInterval);
+                globalTimerInterval = null;
+                document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
+            }
+
+            if (isGameOver) {
+                document.getElementById('btn-share-node').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-share-node').classList.add('hidden');
+            }
+        } else {
+            clearInterval(globalTimerInterval);
+            globalTimerInterval = null;
+            document.getElementById('gameboard-section').classList.add('hidden');
+            document.getElementById('setup-section').classList.remove('hidden');
+        }
+    });
 
     function addPlayerToList() {
         const inputElement = document.getElementById('input-player-name');
@@ -498,43 +132,42 @@
             return;
         }
 
-        playersData = tempPlayers.map((name, index) => ({ id: index, name: name, score: 0 }));
-        totalMatchPoints = 0;
-        blobGambarGlobal = null;
+        const initialPlayers = tempPlayers.map((name, index) => ({ id: index, name: name, score: 0 }));
 
-        document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
-        document.getElementById('setup-section').classList.add('hidden');
-        document.getElementById('gameboard-section').classList.remove('hidden');
-        document.getElementById('btn-share-node').classList.add('hidden');
-
-        renderCards();
-        updateGlobalStatsUI();
-        startGlobalTimer();
+        roomRef.set({
+            locationName: locationName,
+            raceTo: raceTo,
+            playersData: initialPlayers,
+            totalMatchPoints: 0,
+            matchElapsedTime: 0,
+            isTimerRunning: true,
+            isGameOver: false
+        });
     }
 
-    function renderCards() {
+    function renderCardsFromFirebase() {
         const container = document.getElementById('cards-container');
         container.innerHTML = '';
         playersData.forEach(player => {
             const card = document.createElement('div');
-            card.className = `player-card`;
+            
+            let statusClass = "player-card";
+            if (isGameOver && player.score >= raceTo) {
+                statusClass += " winner";
+            } else if (!isGameOver && player.score === (raceTo - 1)) {
+                statusClass += " on-the-hill";
+            }
+
+            card.className = statusClass;
             card.id = `card-${player.id}`;
             card.innerHTML = `
                 <div class="player-name">${player.name}</div>
                 <div class="player-location">📍 ${locationName}</div>
-                <div class="score-display" id="score-${player.id}">0</div>
-                <button class="btn-score" id="btn-${player.id}" onclick="addPoint(${player.id})">+1 Point</button>
+                <div class="score-display" id="score-${player.id}">${player.score}</div>
+                <button class="btn-score" id="btn-${player.id}" ${isGameOver ? 'disabled' : ''} onclick="addPoint(${player.id})">+1 Point</button>
             `;
             container.appendChild(card);
         });
-    }
-
-    function startGlobalTimer() {
-        matchStartTime = Date.now() - matchElapsedTime;
-        globalTimerInterval = setInterval(() => {
-            matchElapsedTime = Date.now() - matchStartTime;
-            document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
-        }, 10);
     }
 
     function formatTime(ms) {
@@ -552,57 +185,44 @@
     }
 
     function addPoint(id) {
-        const player = playersData[id];
-        player.score++;
-        totalMatchPoints++;
-        
-        const cardElement = document.getElementById(`card-${id}`);
-        document.getElementById(`score-${id}`).innerText = player.score;
+        if (isGameOver) return;
 
-        if (player.score >= raceTo) {
-            endGame(id);
-        } else if (player.score === (raceTo - 1)) {
-            cardElement.classList.add('on-the-hill');
+        const updatedPlayers = [...playersData];
+        updatedPlayers[id].score++;
+        const newTotalPoints = totalMatchPoints + 1;
+        
+        let checkGameOver = updatedPlayers[id].score >= raceTo;
+
+        if (globalTimerInterval) {
+            matchElapsedTime = Date.now() - matchStartTime;
         }
-        updateGlobalStatsUI();
-    }
 
-    function endGame(winnerId) {
-        clearInterval(globalTimerInterval); 
-        
-        playersData.forEach(player => {
-            document.getElementById(`btn-${player.id}`).disabled = true;
-            if(player.id !== winnerId) document.getElementById(`card-${player.id}`).classList.remove('on-the-hill');
+        roomRef.update({
+            playersData: updatedPlayers,
+            totalMatchPoints: newTotalPoints,
+            matchElapsedTime: matchElapsedTime,
+            isGameOver: checkGameOver,
+            isTimerRunning: !checkGameOver
         });
-        
-        const winningCard = document.getElementById(`card-${winnerId}`);
-        winningCard.classList.remove('on-the-hill');
-        winningCard.classList.add('winner');
-        
-        document.getElementById('btn-share-node').classList.remove('hidden');
 
-        // Delay sedikit agar animasi kelas WINNER selesai dirender di layar sebelum difoto
-        setTimeout(() => {
-            generateScreenshotAndShare(true); 
-        }, 800);
+        if (checkGameOver) {
+            setTimeout(() => {
+                generateScreenshotAndShare(true); 
+            }, 800);
+        }
     }
 
-    // ================= FITUR FULL PAGE AUTO SCREENSHOT & SHARE =================
     function generateScreenshotAndShare(isAuto = false) {
         const target = document.getElementById('full-page-zone');
-        
-        // Sembunyikan tombol fungsional sementara (biar hasil fotonya bersih tanpa button)
         target.classList.add('hide-on-screenshot');
         
         html2canvas(target, {
             backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg'),
-            scale: 2, // Skala HD kualitias tajam
+            scale: 2, 
             logging: false,
             useCORS: true
         }).then(canvas => {
-            // Tampilkan kembali tombol di web setelah jepretan selesai
             target.classList.remove('hide-on-screenshot');
-
             canvas.toBlob(blob => {
                 blobGambarGlobal = blob;
                 const fileGambar = new File([blob], "billiard-match-full-result.png", { type: "image/png" });
@@ -621,8 +241,6 @@
                         link.download = 'billiard-full-result.png';
                         link.href = URL.createObjectURL(blob);
                         link.click();
-                    } else {
-                        alert("Game Over! Full page screenshot captured. Click 'Share Result' to download the file.");
                     }
                 }
             }, 'image/png');
@@ -634,19 +252,12 @@
 
     function resetGame() {
         if(confirm("Are you sure you want to reset?")) {
-            if(globalTimerInterval) clearInterval(globalTimerInterval);
-            playersData = []; tempPlayers = []; raceTo = 0; matchElapsedTime = 0; totalMatchPoints = 0; blobGambarGlobal = null;
-            document.getElementById('input-location').value = '';
-            document.getElementById('input-race').value = '';
-            document.getElementById('global-timer').innerText = "00:00.00";
+            roomRef.remove(); 
+            tempPlayers = [];
             renderPlayerTags();
-            document.getElementById('gameboard-section').classList.add('hidden');
-            document.getElementById('setup-section').classList.remove('hidden');
         }
     }
 
     function goToIndex() { window.location.href = "index.html"; }
     renderPlayerTags();
 </script>
-</body>
-</html>
