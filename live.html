@@ -1,263 +1,278 @@
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<script>
-    // ================= CONFIGURATION FIREBASE =================
-    // Menggunakan Firebase Config yang sama dengan aplikasi kamu yang lain
-    const firebaseConfig = {
-        apiKey: "AIzaSyCtlTm-HxYxa4f_Ypf-b-cs7zCnqWb5Tq4",
-        authDomain: "billiard-2b803.firebaseapp.com",
-        databaseURL: "https://billiard-2b803-default-rtdb.firebaseio.com",
-        projectId: "billiard-2b803",
-        storageBucket: "billiard-2b803.firebasestorage.app",
-        messagingSenderId: "444434542940",
-        appId: "1:444434542940:web:74b12f78ea71bd54f3d199"
-    };
-    
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    
-    // Kuncinya di sini: Kita buat jalur terpisah khusus untuk fitur Live Scoreboard
-    // Anda juga bisa membuka multi-room/multi-meja dengan url: live.html?room=Meja1
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomId = urlParams.get('room') || 'default_room';
-    
-    // Jalur data disimpan di dalam node 'billiard_live_scoreboard' agar TIDAK BENTROK
-    const roomRef = db.ref('billiard_live_scoreboard/' + roomId);
-    // ==========================================================
+<script type="module">
+// IMPORT FIREBASE DENGAN MODUL MODERN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getDatabase, ref, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-    let tempPlayers = []; 
-    let playersData = [];
-    let raceTo = 0;
-    let locationName = "";
-    let totalMatchPoints = 0;
-    let blobGambarGlobal = null;
-    
-    let matchStartTime = null;
-    let matchElapsedTime = 0;
-    let globalTimerInterval = null;
-    let isGameOver = false;
+// Menggunakan Firebase Config yang sama dengan aplikasi kamu yang lain
+const firebaseConfig = {
+  apiKey: "AIzaSyCtlTm-HxYxa4f_Ypf-b-cs7zCnqWb5Tq4",
+  authDomain: "billiard-2b803.firebaseapp.com",
+  databaseURL: "https://billiard-2b803-default-rtdb.firebaseio.com",
+  projectId: "billiard-2b803",
+  storageBucket: "billiard-2b803.firebasestorage.app",
+  messagingSenderId: "444434542940",
+  appId: "1:444434542940:web:74b12f78ea71bd54f3d199"
+};
 
-    const syncTheme = () => {
-        const savedTheme = localStorage.getItem('billiard-theme') || 'light';
-        document.body.setAttribute('data-theme', savedTheme);
-    };
-    syncTheme();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-    // 1. LISTEN DATABASE FIREBASE (REAL-TIME SINKRONISASI & ANTI-REFRESH)
-    roomRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            playersData = data.playersData || [];
-            raceTo = data.raceTo || 0;
-            locationName = data.locationName || "";
-            totalMatchPoints = data.totalMatchPoints || 0;
-            matchElapsedTime = data.matchElapsedTime || 0;
-            isGameOver = data.isGameOver || false;
+// Kuncinya di sini: Jalur data disimpan di dalam node 'billiard_live_scoreboard' agar TIDAK BENTROK
+const urlParams = new URLSearchParams(window.location.search);
+const roomId = urlParams.get('room') || 'default_room';
+const dbRoomPath = `billiard_live_scoreboard/${roomId}`;
 
-            document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
-            document.getElementById('setup-section').classList.add('hidden');
-            document.getElementById('gameboard-section').classList.remove('hidden');
-            
-            renderCardsFromFirebase();
-            updateGlobalStatsUI();
+let tempPlayers = []; 
+let playersData = [];
+let raceTo = 0;
+let locationName = "";
+let totalMatchPoints = 0;
+let blobGambarGlobal = null;
 
-            if (data.isTimerRunning && !globalTimerInterval && !isGameOver) {
-                matchStartTime = Date.now() - matchElapsedTime;
-                globalTimerInterval = setInterval(() => {
-                    matchElapsedTime = Date.now() - matchStartTime;
-                    document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
-                }, 10);
-            } else if (!data.isTimerRunning || isGameOver) {
-                clearInterval(globalTimerInterval);
-                globalTimerInterval = null;
+let matchStartTime = null;
+let matchElapsedTime = 0;
+let globalTimerInterval = null;
+let isGameOver = false;
+
+const syncTheme = () => {
+    const savedTheme = localStorage.getItem('billiard-theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+};
+syncTheme();
+
+// 1. LISTEN DATABASE FIREBASE (REAL-TIME SINKRONISASI & ANTI-REFRESH)
+onValue(ref(db, dbRoomPath), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        playersData = data.playersData || [];
+        raceTo = data.raceTo || 0;
+        locationName = data.locationName || "";
+        totalMatchPoints = data.totalMatchPoints || 0;
+        matchElapsedTime = data.matchElapsedTime || 0;
+        isGameOver = data.isGameOver || false;
+
+        document.getElementById('race-meta').innerText = `📍 ${locationName}  |  🏁 Race To: ${raceTo}`;
+        document.getElementById('setup-section').classList.add('hidden');
+        document.getElementById('gameboard-section').classList.remove('hidden');
+        
+        renderCardsFromFirebase();
+        updateGlobalStatsUI();
+
+        if (data.isTimerRunning && !globalTimerInterval && !isGameOver) {
+            matchStartTime = Date.now() - matchElapsedTime;
+            globalTimerInterval = setInterval(() => {
+                matchElapsedTime = Date.now() - matchStartTime;
                 document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
-            }
-
-            if (isGameOver) {
-                document.getElementById('btn-share-node').classList.remove('hidden');
-            } else {
-                document.getElementById('btn-share-node').classList.add('hidden');
-            }
-        } else {
+            }, 10);
+        } else if (!data.isTimerRunning || isGameOver) {
             clearInterval(globalTimerInterval);
             globalTimerInterval = null;
-            document.getElementById('gameboard-section').classList.add('hidden');
-            document.getElementById('setup-section').classList.remove('hidden');
+            document.getElementById('global-timer').innerText = formatTime(matchElapsedTime);
         }
+
+        if (isGameOver) {
+            document.getElementById('btn-share-node').classList.remove('hidden');
+        } else {
+            document.getElementById('btn-share-node').classList.add('hidden');
+        }
+    } else {
+        clearInterval(globalTimerInterval);
+        globalTimerInterval = null;
+        document.getElementById('gameboard-section').classList.add('hidden');
+        document.getElementById('setup-section').classList.remove('hidden');
+    }
+});
+
+function addPlayerToList() {
+    const inputElement = document.getElementById('input-player-name');
+    const name = inputElement.value.trim();
+    if (!name) return;
+    if (tempPlayers.includes(name)) { alert("Already added!"); return; }
+
+    tempPlayers.push(name);
+    inputElement.value = ''; 
+    renderPlayerTags();
+}
+
+function renderPlayerTags() {
+    const previewDiv = document.getElementById('player-list-preview');
+    previewDiv.innerHTML = '';
+    if(tempPlayers.length === 0) {
+        previewDiv.innerHTML = '<span style="color:var(--sub); font-size:13px; padding: 5px;">No players added yet.</span>';
+        return;
+    }
+    tempPlayers.forEach((name, index) => {
+        const tag = document.createElement('div');
+        tag.className = 'player-tag';
+        tag.innerHTML = `${name} <span class="remove-player" data-index="${index}">&times;</span>`;
+        previewDiv.appendChild(tag);
+    });
+}
+
+function initiateRace() {
+    locationName = document.getElementById('input-location').value.trim() || "Local Arena";
+    raceTo = parseInt(document.getElementById('input-race').value);
+
+    if (tempPlayers.length === 0 || !raceTo) {
+        alert("Please complete the forms!");
+        return;
+    }
+
+    const initialPlayers = tempPlayers.map((name, index) => ({ id: index, name: name, score: 0 }));
+
+    set(ref(db, dbRoomPath), {
+        locationName: locationName,
+        raceTo: raceTo,
+        playersData: initialPlayers,
+        totalMatchPoints: 0,
+        matchElapsedTime: 0,
+        isTimerRunning: true,
+        isGameOver: false
+    });
+}
+
+function renderCardsFromFirebase() {
+    const container = document.getElementById('cards-container');
+    container.innerHTML = '';
+    playersData.forEach(player => {
+        const card = document.createElement('div');
+        
+        let statusClass = "player-card";
+        if (isGameOver && player.score >= raceTo) {
+            statusClass += " winner";
+        } else if (!isGameOver && player.score === (raceTo - 1)) {
+            statusClass += " on-the-hill";
+        }
+
+        card.className = statusClass;
+        card.id = `card-${player.id}`;
+        card.innerHTML = `
+            <div class="player-name">${player.name}</div>
+            <div class="player-location">📍 ${locationName}</div>
+            <div class="score-display" id="score-${player.id}">${player.score}</div>
+            <button class="btn-score" data-id="${player.id}" ${isGameOver ? 'disabled' : ''}>+1 Point</button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function formatTime(ms) {
+    let minutes = Math.floor(ms / 60000);
+    let seconds = Math.floor((ms % 60000) / 1000);
+    let centiseconds = Math.floor((ms % 1000) / 10);
+    return ((minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "." + (centiseconds < 10 ? "0" : "") + centiseconds);
+}
+
+function formatAvgTime(ms) { return `${(ms / 1000).toFixed(2)}s`; }
+
+function updateGlobalStatsUI() {
+    const avgDisplay = document.getElementById('global-avg-value');
+    if(avgDisplay) {
+        avgDisplay.innerText = totalMatchPoints > 0 ? formatAvgTime(matchElapsedTime / totalMatchPoints) : "-";
+    }
+}
+
+function addPoint(id) {
+    if (isGameOver) return;
+
+    const updatedPlayers = [...playersData];
+    updatedPlayers[id].score++;
+    const newTotalPoints = totalMatchPoints + 1;
+    
+    let checkGameOver = updatedPlayers[id].score >= raceTo;
+
+    if (globalTimerInterval) {
+        matchElapsedTime = Date.now() - matchStartTime;
+    }
+
+    update(ref(db, dbRoomPath), {
+        playersData: updatedPlayers,
+        totalMatchPoints: newTotalPoints,
+        matchElapsedTime: matchElapsedTime,
+        isGameOver: checkGameOver,
+        isTimerRunning: !checkGameOver
     });
 
-    function addPlayerToList() {
-        const inputElement = document.getElementById('input-player-name');
-        const name = inputElement.value.trim();
-        if (!name) return;
-        if (tempPlayers.includes(name)) { alert("Already added!"); return; }
+    if (checkGameOver) {
+        setTimeout(() => {
+            generateScreenshotAndShare(true); 
+        }, 800);
+    }
+}
 
-        tempPlayers.push(name);
-        inputElement.value = ''; 
+function generateScreenshotAndShare(isAuto = false) {
+    const target = document.getElementById('full-page-zone');
+    if(!target) return;
+    target.classList.add('hide-on-screenshot');
+    
+    html2canvas(target, {
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg') || '#f5f5f7',
+        scale: 2, 
+        logging: false,
+        useCORS: true
+    }).then(canvas => {
+        target.classList.remove('hide-on-screenshot');
+        canvas.toBlob(blob => {
+            blobGambarGlobal = blob;
+            const fileGambar = new File([blob], "billiard-match-full-result.png", { type: "image/png" });
+
+            if (navigator.canShare && navigator.canShare({ files: [fileGambar] })) {
+                navigator.share({
+                    files: [fileGambar],
+                    title: 'Billiard Match Result',
+                    text: `Match Overview at ${locationName}. Target Race: ${raceTo}.`
+                })
+                .then(() => console.log('Successfully Shared Full Page!'))
+                .catch((error) => console.log('Sharing cancelled/failed', error));
+            } else {
+                if (!isAuto) {
+                    const link = document.createElement('a');
+                    link.download = 'billiard-full-result.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                }
+            }
+        }, 'image/png');
+    }).catch(err => {
+        if(target) target.classList.remove('hide-on-screenshot');
+        console.error("Screenshot failed:", err);
+    });
+}
+
+function resetGame() {
+    if(confirm("Are you sure you want to reset?")) {
+        remove(ref(db, dbRoomPath)); 
+        tempPlayers = [];
         renderPlayerTags();
     }
+}
 
-    document.getElementById('input-player-name').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') addPlayerToList();
-    });
+// BIND KE WINDOW AGAR TOMBOL HTML BISA MEMANGGIL FUNGSI DI DALAM MODUL
+window.addPlayerToList = addPlayerToList;
+window.initiateRace = initiateRace;
+window.resetGame = resetGame;
+window.goToIndex = () => { window.location.href = "index.html"; };
+window.generateScreenshotAndShare = () => generateScreenshotAndShare(false);
 
-    function renderPlayerTags() {
-        const previewDiv = document.getElementById('player-list-preview');
-        previewDiv.innerHTML = '';
-        if(tempPlayers.length === 0) {
-            previewDiv.innerHTML = '<span style="color:var(--sub); font-size:13px; padding: 5px;">No players added yet.</span>';
-            return;
-        }
-        tempPlayers.forEach((name, index) => {
-            const tag = document.createElement('div');
-            tag.className = 'player-tag';
-            tag.innerHTML = `${name} <span class="remove-player" onclick="removePlayerFromList(${index})">&times;</span>`;
-            previewDiv.appendChild(tag);
-        });
-    }
+// EVENT LISTENERS UNTUK ELEMENT DINAMIS (MENGHINDARI ERROR TYPE="MODULE")
+document.getElementById('input-player-name').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addPlayerToList();
+});
 
-    function removePlayerFromList(index) {
+document.addEventListener('click', function(e) {
+    if(e.target && e.target.classList.contains('remove-player')) {
+        const index = parseInt(e.target.getAttribute('data-index'));
         tempPlayers.splice(index, 1);
         renderPlayerTags();
     }
-
-    function initiateRace() {
-        locationName = document.getElementById('input-location').value.trim() || "Local Arena";
-        raceTo = parseInt(document.getElementById('input-race').value);
-
-        if (tempPlayers.length === 0 || !raceTo) {
-            alert("Please complete the forms!");
-            return;
-        }
-
-        const initialPlayers = tempPlayers.map((name, index) => ({ id: index, name: name, score: 0 }));
-
-        roomRef.set({
-            locationName: locationName,
-            raceTo: raceTo,
-            playersData: initialPlayers,
-            totalMatchPoints: 0,
-            matchElapsedTime: 0,
-            isTimerRunning: true,
-            isGameOver: false
-        });
+    if(e.target && e.target.classList.contains('btn-score')) {
+        const id = parseInt(e.target.getAttribute('data-id'));
+        addPoint(id);
     }
+});
 
-    function renderCardsFromFirebase() {
-        const container = document.getElementById('cards-container');
-        container.innerHTML = '';
-        playersData.forEach(player => {
-            const card = document.createElement('div');
-            
-            let statusClass = "player-card";
-            if (isGameOver && player.score >= raceTo) {
-                statusClass += " winner";
-            } else if (!isGameOver && player.score === (raceTo - 1)) {
-                statusClass += " on-the-hill";
-            }
-
-            card.className = statusClass;
-            card.id = `card-${player.id}`;
-            card.innerHTML = `
-                <div class="player-name">${player.name}</div>
-                <div class="player-location">📍 ${locationName}</div>
-                <div class="score-display" id="score-${player.id}">${player.score}</div>
-                <button class="btn-score" id="btn-${player.id}" ${isGameOver ? 'disabled' : ''} onclick="addPoint(${player.id})">+1 Point</button>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    function formatTime(ms) {
-        let minutes = Math.floor(ms / 60000);
-        let seconds = Math.floor((ms % 60000) / 1000);
-        let centiseconds = Math.floor((ms % 1000) / 10);
-        return ((minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "." + (centiseconds < 10 ? "0" : "") + centiseconds);
-    }
-
-    function formatAvgTime(ms) { return `${(ms / 1000).toFixed(2)}s`; }
-
-    function updateGlobalStatsUI() {
-        const avgDisplay = document.getElementById('global-avg-value');
-        avgDisplay.innerText = totalMatchPoints > 0 ? formatAvgTime(matchElapsedTime / totalMatchPoints) : "-";
-    }
-
-    function addPoint(id) {
-        if (isGameOver) return;
-
-        const updatedPlayers = [...playersData];
-        updatedPlayers[id].score++;
-        const newTotalPoints = totalMatchPoints + 1;
-        
-        let checkGameOver = updatedPlayers[id].score >= raceTo;
-
-        if (globalTimerInterval) {
-            matchElapsedTime = Date.now() - matchStartTime;
-        }
-
-        roomRef.update({
-            playersData: updatedPlayers,
-            totalMatchPoints: newTotalPoints,
-            matchElapsedTime: matchElapsedTime,
-            isGameOver: checkGameOver,
-            isTimerRunning: !checkGameOver
-        });
-
-        if (checkGameOver) {
-            setTimeout(() => {
-                generateScreenshotAndShare(true); 
-            }, 800);
-        }
-    }
-
-    function generateScreenshotAndShare(isAuto = false) {
-        const target = document.getElementById('full-page-zone');
-        target.classList.add('hide-on-screenshot');
-        
-        html2canvas(target, {
-            backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg'),
-            scale: 2, 
-            logging: false,
-            useCORS: true
-        }).then(canvas => {
-            target.classList.remove('hide-on-screenshot');
-            canvas.toBlob(blob => {
-                blobGambarGlobal = blob;
-                const fileGambar = new File([blob], "billiard-match-full-result.png", { type: "image/png" });
-
-                if (navigator.canShare && navigator.canShare({ files: [fileGambar] })) {
-                    navigator.share({
-                        files: [fileGambar],
-                        title: 'Billiard Match Result',
-                        text: `Match Overview at ${locationName}. Target Race: ${raceTo}.`
-                    })
-                    .then(() => console.log('Successfully Shared Full Page!'))
-                    .catch((error) => console.log('Sharing cancelled/failed', error));
-                } else {
-                    if (!isAuto) {
-                        const link = document.createElement('a');
-                        link.download = 'billiard-full-result.png';
-                        link.href = URL.createObjectURL(blob);
-                        link.click();
-                    }
-                }
-            }, 'image/png');
-        }).catch(err => {
-            target.classList.remove('hide-on-screenshot');
-            console.error("Screenshot failed:", err);
-        });
-    }
-
-    function resetGame() {
-        if(confirm("Are you sure you want to reset?")) {
-            roomRef.remove(); 
-            tempPlayers = [];
-            renderPlayerTags();
-        }
-    }
-
-    function goToIndex() { window.location.href = "index.html"; }
-    renderPlayerTags();
+renderPlayerTags();
 </script>
