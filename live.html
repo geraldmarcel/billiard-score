@@ -1,11 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billiard Live Scoreboard - Multi Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { 
+    --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --sub: #86868b;
+    --border: #d2d2d7; --primary: #0071e3; --accent: #f5f5f7;
+    --win: #34c759; --hill: #ff9500;
+  }
+
+  [data-theme="dark"] {
+    --bg: #000000; --card: #1c1c1e; --text: #f5f5f7; --sub: #a1a1a6;
+    --border: #38383a; --primary: #0a84ff; --accent: #2c2c2e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; transition: 0.3s; line-height: 1.5; }
+  .container { max-width: 700px; margin: 0 auto; }
+  
+  .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+  .back-btn { text-decoration: none; color: var(--sub); font-size: 13px; font-weight: 600; cursor: pointer; }
+  
+  .card { background: var(--card); padding: 24px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border); }
+  h2 { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
+  
+  .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+  label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--sub); margin-bottom: 6px; letter-spacing: 0.5px; }
+  input { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 12px; outline: none; font-size: 14px; width: 100%; }
+  
+  .flex-row { display: flex; gap: 12px; }
+  .btn { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; width: 100%; }
+  .btn-sec { background: var(--accent); color: var(--text); border: 1px solid var(--border); }
+  
+  /* Player tags */
+  .player-tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .player-tag { background: var(--accent); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .remove-player { color: #ff3b30; cursor: pointer; font-weight: 800; }
+
+  /* Gameboard */
+  .meta-info { text-align: center; margin-bottom: 15px; font-size: 13px; font-weight: 700; color: var(--sub); }
+  .timer-display { text-align: center; font-size: 36px; font-weight: 800; font-family: monospace; margin: 10px 0; color: var(--primary); }
+  .stats-mini { text-align: center; font-size: 12px; color: var(--sub); margin-bottom: 20px; font-weight: 600; }
+  
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+  @media (max-width: 480px) { .cards-grid { grid-template-columns: 1fr; } }
+  
+  .player-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; position: relative; transition: 0.3s; }
+  .player-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .player-location { font-size: 11px; color: var(--sub); margin-bottom: 15px; font-weight: 600; }
+  .score-display { font-size: 64px; font-weight: 800; margin-bottom: 15px; font-family: 'Inter', sans-serif; }
+  .btn-score { padding: 12px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer; }
+  
+  /* Status Card */
+  .player-card.on-the-hill { border-color: var(--hill); box-shadow: 0 0 15px rgba(255, 149, 0, 0.2); }
+  .player-card.winner { border-color: var(--win); background: rgba(52, 199, 89, 0.05); }
+  .player-card.winner .score-display { color: var(--win); }
+
+  .hidden { display: none !important; }
+  .hide-on-screenshot #btn-zone, 
+  .hide-on-screenshot .nav-top { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="container" id="full-page-zone">
+  <div class="nav-top">
+    <span class="back-btn" id="btn-back">← Back to Home</span>
+    <span style="font-size: 12px; font-weight: 700; color: var(--sub);" id="room-indicator">Room: default</span>
+  </div>
+
+  <div id="setup-section" class="card">
+    <h2>🎱 Setup New Live Match</h2>
+    <div class="input-group">
+      <label>Arena Name / Location</label>
+      <input type="text" id="input-location" placeholder="e.g. Dungeon Pool, Hongdae">
+    </div>
+    <div class="input-group">
+      <label>Target Race To</label>
+      <input type="number" id="input-race" value="5" min="1">
+    </div>
+    <div class="input-group">
+      <label>Add Player</label>
+      <div class="flex-row">
+        <input type="text" id="input-player-name" placeholder="Enter player name...">
+        <button class="btn" style="width: auto;" id="btn-add-player">Add</button>
+      </div>
+      <div class="player-tags-container" id="player-list-preview"></div>
+    </div>
+    <button class="btn" style="margin-top: 15px;" id="btn-start-race">Initiate Live Race</button>
+  </div>
+
+  <div id="gameboard-section" class="hidden">
+    <div class="meta-info" id="race-meta">📍 Arena Name | 🏁 Race To: 0</div>
+    <div class="timer-display" id="global-timer">00:00.00</div>
+    <div class="stats-mini">Avg Pace: <span id="global-avg-value">-</span> per point</div>
+    
+    <div class="cards-grid" id="cards-container"></div>
+    
+    <div class="flex-row" id="btn-zone">
+      <button class="btn btn-sec" id="btn-reset">Reset Game</button>
+      <button class="btn hidden" id="btn-share-node">📸 Share Result</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script type="module">
-// IMPORT FIREBASE DENGAN MODUL MODERN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-// Menggunakan Firebase Config yang sama dengan aplikasi kamu yang lain
 const firebaseConfig = {
   apiKey: "AIzaSyCtlTm-HxYxa4f_Ypf-b-cs7zCnqWb5Tq4",
   authDomain: "billiard-2b803.firebaseapp.com",
@@ -16,13 +123,15 @@ const firebaseConfig = {
   appId: "1:444434542940:web:74b12f78ea71bd54f3d199"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Kuncinya di sini: Jalur data disimpan di dalam node 'billiard_live_scoreboard' agar TIDAK BENTROK
+// Mendapatkan ID meja dari parameter URL (?room=Meja1) jika ada
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('room') || 'default_room';
+document.getElementById('room-indicator').innerText = `Room: ${roomId}`;
+
+// Jalur database khusus live scoreboard agar aman dari tabrakan data
 const dbRoomPath = `billiard_live_scoreboard/${roomId}`;
 
 let tempPlayers = []; 
@@ -30,20 +139,17 @@ let playersData = [];
 let raceTo = 0;
 let locationName = "";
 let totalMatchPoints = 0;
-let blobGambarGlobal = null;
 
 let matchStartTime = null;
 let matchElapsedTime = 0;
 let globalTimerInterval = null;
 let isGameOver = false;
 
-const syncTheme = () => {
-    const savedTheme = localStorage.getItem('billiard-theme') || 'light';
-    document.body.setAttribute('data-theme', savedTheme);
-};
-syncTheme();
+// Sinkronisasi Tema Otomatis dengan web utama
+const savedTheme = localStorage.getItem('billiard-theme') || 'light';
+document.body.setAttribute('data-theme', savedTheme);
 
-// 1. LISTEN DATABASE FIREBASE (REAL-TIME SINKRONISASI & ANTI-REFRESH)
+// SINKRONISASI DATA REALTIME DARI FIREBASE
 onValue(ref(db, dbRoomPath), (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -90,7 +196,7 @@ function addPlayerToList() {
     const inputElement = document.getElementById('input-player-name');
     const name = inputElement.value.trim();
     if (!name) return;
-    if (tempPlayers.includes(name)) { alert("Already added!"); return; }
+    if (tempPlayers.includes(name)) { alert("Name already added!"); return; }
 
     tempPlayers.push(name);
     inputElement.value = ''; 
@@ -117,7 +223,7 @@ function initiateRace() {
     raceTo = parseInt(document.getElementById('input-race').value);
 
     if (tempPlayers.length === 0 || !raceTo) {
-        alert("Please complete the forms!");
+        alert("Please add players and set the target race!");
         return;
     }
 
@@ -148,11 +254,10 @@ function renderCardsFromFirebase() {
         }
 
         card.className = statusClass;
-        card.id = `card-${player.id}`;
         card.innerHTML = `
             <div class="player-name">${player.name}</div>
             <div class="player-location">📍 ${locationName}</div>
-            <div class="score-display" id="score-${player.id}">${player.score}</div>
+            <div class="score-display">${player.score}</div>
             <button class="btn-score" data-id="${player.id}" ${isGameOver ? 'disabled' : ''}>+1 Point</button>
         `;
         container.appendChild(card);
@@ -197,9 +302,7 @@ function addPoint(id) {
     });
 
     if (checkGameOver) {
-        setTimeout(() => {
-            generateScreenshotAndShare(true); 
-        }, 800);
+        setTimeout(() => { generateScreenshotAndShare(true); }, 800);
     }
 }
 
@@ -216,21 +319,18 @@ function generateScreenshotAndShare(isAuto = false) {
     }).then(canvas => {
         target.classList.remove('hide-on-screenshot');
         canvas.toBlob(blob => {
-            blobGambarGlobal = blob;
-            const fileGambar = new File([blob], "billiard-match-full-result.png", { type: "image/png" });
+            const fileGambar = new File([blob], "billiard-live-result.png", { type: "image/png" });
 
             if (navigator.canShare && navigator.canShare({ files: [fileGambar] })) {
                 navigator.share({
                     files: [fileGambar],
                     title: 'Billiard Match Result',
                     text: `Match Overview at ${locationName}. Target Race: ${raceTo}.`
-                })
-                .then(() => console.log('Successfully Shared Full Page!'))
-                .catch((error) => console.log('Sharing cancelled/failed', error));
+                }).catch((error) => console.log('Sharing cancelled/failed', error));
             } else {
                 if (!isAuto) {
                     const link = document.createElement('a');
-                    link.download = 'billiard-full-result.png';
+                    link.download = 'billiard-live-result.png';
                     link.href = URL.createObjectURL(blob);
                     link.click();
                 }
@@ -243,25 +343,25 @@ function generateScreenshotAndShare(isAuto = false) {
 }
 
 function resetGame() {
-    if(confirm("Are you sure you want to reset?")) {
+    if(confirm("Are you sure you want to reset this match?")) {
         remove(ref(db, dbRoomPath)); 
         tempPlayers = [];
         renderPlayerTags();
     }
 }
 
-// BIND KE WINDOW AGAR TOMBOL HTML BISA MEMANGGIL FUNGSI DI DALAM MODUL
-window.addPlayerToList = addPlayerToList;
-window.initiateRace = initiateRace;
-window.resetGame = resetGame;
-window.goToIndex = () => { window.location.href = "index.html"; };
-window.generateScreenshotAndShare = () => generateScreenshotAndShare(false);
+// MANAGEMENT TRICIGER KLIK ELEMEN STATIS
+document.getElementById('btn-add-player').onclick = addPlayerToList;
+document.getElementById('btn-start-race').onclick = initiateRace;
+document.getElementById('btn-reset').onclick = resetGame;
+document.getElementById('btn-back').onclick = () => { window.location.href = "index.html"; };
+document.getElementById('btn-share-node').onclick = () => generateScreenshotAndShare(false);
 
-// EVENT LISTENERS UNTUK ELEMENT DINAMIS (MENGHINDARI ERROR TYPE="MODULE")
 document.getElementById('input-player-name').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addPlayerToList();
+    if (e.key === 'Enter') addPlayerToList;
 });
 
+// MANAGEMENT INTERAKSI ELEMEN DINAMIS (Anti-Error Modul)
 document.addEventListener('click', function(e) {
     if(e.target && e.target.classList.contains('remove-player')) {
         const index = parseInt(e.target.getAttribute('data-index'));
@@ -276,3 +376,5 @@ document.addEventListener('click', function(e) {
 
 renderPlayerTags();
 </script>
+</body>
+</html>
